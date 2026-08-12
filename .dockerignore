@@ -1,0 +1,14 @@
+.venv
+.git
+__pycache__
+*.pyc
+*.pyo
+backend/__pycache__
+backend/venv
+.env
+.env.example
+aws/
+scripts/
+.gitignore
+README.md
+.vscode/

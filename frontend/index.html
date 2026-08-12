@@ -1,0 +1,3437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LeafyShop — Powered by MongoDB Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --mongo-green: #00684A;
+      --mongo-green-dark: #023430;
+      --mongo-green-light: #00ED64;
+      --mongo-slate: #001E2B;
+      --mongo-mist: #E3FCF7;
+      --mongo-spring: #71F6BA;
+      --mongo-bg: #f4f8f6;
+      --mongo-card: #ffffff;
+      --mongo-border: #d4e4dc;
+      --mongo-text: #1a2e28;
+      --mongo-muted: #5b7268;
+      --mongo-link: #00684A;
+      --mongo-price: #00684A;
+      --radius: 10px;
+      --shadow-card: 0 1px 3px rgba(0,104,74,.06), 0 0 0 1px rgba(0,104,74,.04);
+      --shadow-hover: 0 8px 24px rgba(0,104,74,.10), 0 2px 8px rgba(0,0,0,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--mongo-text);
+      background: var(--mongo-bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: var(--mongo-link); text-decoration: none; }
+    a:hover { color: var(--mongo-green-dark); text-decoration: underline; }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: var(--mongo-slate);
+      color: #fff;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .header-top {
+      display: flex; align-items: center; gap: 1rem;
+      max-width: 1400px; margin: 0 auto;
+      padding: 0.6rem 1rem;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 0.5rem;
+      white-space: nowrap; cursor: pointer;
+      padding: 0.3rem 0.5rem; border-radius: 6px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .logo:hover { border-color: rgba(255,255,255,0.3); }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--mongo-green-light);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 900; color: var(--mongo-slate);
+    }
+    .logo-text { font-size: 1.3rem; font-weight: 900; letter-spacing: -0.03em; color: #fff; }
+    .logo-sub { font-size: 0.6rem; font-weight: 500; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; display: block; margin-top: -2px; }
+    .search-bar {
+      flex: 1; display: flex; height: 42px; border-radius: 8px; overflow: hidden;
+      border: 2px solid var(--mongo-green-light);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-bar:focus-within {
+      box-shadow: 0 0 0 3px rgba(0,237,100,0.2);
+    }
+    .search-mode-select {
+      background: var(--mongo-mist); border: none; padding: 0 0.7rem;
+      font-size: 0.75rem; font-weight: 600; color: var(--mongo-green-dark);
+      cursor: pointer; min-width: 130px;
+      border-right: 1px solid var(--mongo-border);
+    }
+    .search-input {
+      flex: 1; border: none; padding: 0 0.85rem;
+      font-size: 0.9375rem; outline: none; color: var(--mongo-text);
+      background: #fff;
+    }
+    .search-btn {
+      background: var(--mongo-green);
+      border: none;
+      padding: 0 1.1rem; cursor: pointer;
+      display: flex; align-items: center;
+      transition: background 0.15s;
+    }
+    .search-btn:hover { background: var(--mongo-green-dark); }
+    .search-btn svg { width: 20px; height: 20px; fill: #fff; }
+    /* Camera icon — inline trigger for multimodal image search */
+    .camera-btn {
+      background: #fff;
+      border: none; border-left: 1px solid var(--mongo-border);
+      padding: 0 0.85rem; cursor: pointer;
+      display: flex; align-items: center; gap: 0.35rem;
+      color: var(--mongo-green-dark);
+      transition: background 0.15s;
+    }
+    .camera-btn:hover { background: var(--mongo-mist); }
+    .camera-btn svg { width: 20px; height: 20px; stroke: var(--mongo-green-dark); }
+    .camera-btn-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.02em;
+    }
+    @media (max-width: 720px) {
+      .camera-btn-label { display: none; }
+    }
+    .header-actions {
+      display: flex; align-items: center; gap: 0.25rem;
+    }
+    .header-btn {
+      display: flex; flex-direction: column; align-items: flex-start;
+      padding: 0.4rem 0.65rem; border-radius: 6px;
+      border: 1px solid transparent; cursor: pointer; background: none; color: #fff;
+      font-family: inherit; transition: border-color 0.15s;
+    }
+    .header-btn:hover { border-color: rgba(255,255,255,0.3); }
+    .header-btn-sub { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+    .header-btn-main { font-size: 0.8125rem; font-weight: 700; }
+    .cart-btn-header {
+      display: flex; align-items: flex-end; gap: 0.2rem;
+      padding: 0.4rem 0.65rem; border-radius: 6px;
+      border: 1px solid transparent; cursor: pointer; background: none; color: #fff;
+      position: relative; font-family: inherit; transition: border-color 0.15s;
+    }
+    .cart-btn-header:hover { border-color: rgba(255,255,255,0.3); }
+    .cart-icon-wrap {
+      position: relative; font-size: 1.5rem; line-height: 1;
+    }
+    .cart-label { font-size: 0.8125rem; font-weight: 700; }
+    .cart-badge {
+      position: absolute; top: -6px; right: -8px;
+      background: var(--mongo-green-light); color: var(--mongo-slate);
+      font-size: 0.6875rem; font-weight: 800;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cart-badge.hidden { display: none; }
+
+    /* ===== MAIN ===== */
+    .main {
+      max-width: 1400px; margin: 0 auto; padding: 1rem;
+      display: grid; grid-template-columns: 220px 1fr; gap: 1rem;
+    }
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      background: var(--mongo-card); border-radius: var(--radius);
+      padding: 1rem; box-shadow: var(--shadow-card); align-self: start;
+      border: 1px solid var(--mongo-border);
+    }
+    .sidebar h3 {
+      font-size: 0.8125rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.04em; margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--mongo-border);
+      color: var(--mongo-green-dark);
+    }
+    .filter-group { margin-bottom: 1.25rem; }
+    .filter-option {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.3rem 0; font-size: 0.8125rem; cursor: pointer;
+      color: var(--mongo-text);
+    }
+    .filter-option:hover { color: var(--mongo-green); }
+    .filter-option input[type="radio"] { accent-color: var(--mongo-green); }
+    .mode-badge {
+      display: inline-block; font-size: 0.5625rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 0.12rem 0.4rem; border-radius: 4px;
+      margin-left: 0.25rem;
+      background: var(--mongo-green); color: #fff;
+    }
+
+    /* ===== CONTENT ===== */
+    .content { min-width: 0; }
+    .results-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.65rem 1rem; margin-bottom: 0.75rem;
+      background: var(--mongo-card); border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      font-size: 0.8125rem; color: var(--mongo-muted);
+      border: 1px solid var(--mongo-border);
+    }
+    .results-count span { font-weight: 700; color: var(--mongo-text); }
+
+    /* ===== PRODUCT GRID ===== */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .product-card {
+      background: var(--mongo-card); border-radius: var(--radius);
+      border: 1px solid var(--mongo-border);
+      box-shadow: var(--shadow-card);
+      overflow: hidden; cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+      display: flex; flex-direction: column;
+    }
+    .product-card:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-3px);
+      border-color: rgba(0,104,74,0.25);
+    }
+    .product-img {
+      width: 100%; height: 200px;
+      background: linear-gradient(135deg, var(--mongo-mist) 0%, #f0f7f4 100%);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .product-img img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.3s;
+    }
+    .product-card:hover .product-img img { transform: scale(1.05); }
+    .product-img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--mongo-mist) 0%, #dcf5ec 100%);
+      font-size: 3rem;
+    }
+    .product-body { padding: 0.85rem; flex: 1; display: flex; flex-direction: column; }
+    .product-category {
+      font-size: 0.6875rem; font-weight: 600; color: var(--mongo-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+    .product-name {
+      font-size: 0.9rem; font-weight: 700; color: var(--mongo-text);
+      line-height: 1.35; margin-bottom: 0.35rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .product-name:hover { color: var(--mongo-green); }
+    .product-rating {
+      display: flex; align-items: center; gap: 0.35rem;
+      margin-bottom: 0.35rem;
+    }
+    .stars { color: var(--mongo-green); font-size: 0.8125rem; letter-spacing: 0.5px; }
+    .rating-count { font-size: 0.75rem; color: var(--mongo-muted); }
+    .product-price { margin-bottom: 0.35rem; }
+    .price-symbol { font-size: 0.75rem; vertical-align: super; color: var(--mongo-green-dark); }
+    .price-whole { font-size: 1.3rem; font-weight: 800; color: var(--mongo-green-dark); }
+    .price-fraction { font-size: 0.75rem; vertical-align: super; color: var(--mongo-green-dark); }
+    .product-stock {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--mongo-green); margin-bottom: 0.35rem;
+    }
+    .product-stock.out { color: #cc3340; }
+    .product-tags {
+      display: flex; flex-wrap: wrap; gap: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+    .product-tag {
+      font-size: 0.625rem; font-weight: 600;
+      background: var(--mongo-mist); color: var(--mongo-green);
+      padding: 0.15rem 0.45rem; border-radius: 4px;
+    }
+    .product-specs {
+      display: flex; flex-wrap: wrap; gap: 0.3rem;
+      margin-bottom: 0.5rem;
+    }
+    .spec-chip {
+      font-size: 0.625rem; font-weight: 700;
+      background: var(--mongo-slate); color: var(--mongo-green-light);
+      padding: 0.15rem 0.45rem; border-radius: 4px;
+      letter-spacing: 0.01em; white-space: nowrap;
+    }
+    .product-score {
+      font-size: 0.625rem; font-weight: 700;
+      font-family: 'SF Mono', ui-monospace, monospace;
+      padding: 0.2rem 0.45rem; border-radius: 4px;
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      margin-bottom: 0.4rem;
+    }
+    .score-high { background: #dcfce7; color: #166534; }
+    .score-med { background: #fef9c3; color: #854d0e; }
+    .score-low { background: #fee2e2; color: #991b1b; }
+    .product-desc {
+      font-size: 0.75rem; color: var(--mongo-muted); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      flex: 1;
+    }
+    .add-btn {
+      margin-top: 0.6rem;
+      background: var(--mongo-green);
+      border: none; border-radius: 8px;
+      padding: 0.55rem 0; font-size: 0.8125rem; font-weight: 700;
+      color: #fff;
+      cursor: pointer; width: 100%; text-align: center;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .add-btn:hover { background: var(--mongo-green-dark); box-shadow: 0 2px 8px rgba(0,104,74,0.2); }
+    .add-btn.added {
+      background: var(--mongo-green-light); color: var(--mongo-slate);
+      pointer-events: none;
+    }
+    .leafy-badge {
+      position: absolute; top: 8px; left: 8px;
+      background: var(--mongo-green); color: #fff;
+      font-size: 0.5625rem; font-weight: 800;
+      padding: 0.2rem 0.5rem; border-radius: 4px;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .rank-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--mongo-slate); color: var(--mongo-green-light);
+      font-size: 0.6875rem; font-weight: 800;
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ===== DRAWER ===== */
+    .drawer-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,30,43,0.5); z-index: 90;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .drawer {
+      position: fixed; top: 0; right: 0;
+      width: min(420px, 92vw); height: 100%;
+      background: var(--mongo-card); z-index: 91;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      box-shadow: -4px 0 24px rgba(0,30,43,0.15);
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--mongo-mist);
+    }
+    .drawer-header h2 { font-size: 1.05rem; font-weight: 800; color: var(--mongo-green-dark); }
+    .drawer-close {
+      border: none; background: none; font-size: 1.5rem;
+      cursor: pointer; color: var(--mongo-muted); padding: 0.25rem;
+    }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
+    .drawer-footer {
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--mongo-border);
+      background: var(--mongo-mist);
+    }
+    .cart-item {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.75rem 0; border-bottom: 1px solid #eef4f1;
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-weight: 700; font-size: 0.875rem; margin-bottom: 0.15rem; color: var(--mongo-text); }
+    .cart-item-meta { font-size: 0.75rem; color: var(--mongo-muted); }
+    .cart-item-price { font-weight: 800; color: var(--mongo-green-dark); font-size: 0.875rem; }
+    .cart-item-actions { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem; }
+    .qty-btn {
+      width: 28px; height: 28px; border: 1px solid var(--mongo-border);
+      border-radius: 6px; background: var(--mongo-mist); font-size: 1rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--mongo-green-dark);
+    }
+    .qty-btn:hover { background: var(--mongo-spring); border-color: var(--mongo-green); }
+    .qty-val { font-size: 0.875rem; font-weight: 700; min-width: 24px; text-align: center; }
+    .remove-btn {
+      border: none; background: none; color: #cc3340;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer; margin-left: 0.5rem;
+    }
+    .remove-btn:hover { text-decoration: underline; }
+    .cart-total {
+      display: flex; justify-content: space-between;
+      font-size: 1rem; font-weight: 800; margin-bottom: 0.75rem;
+      color: var(--mongo-green-dark);
+    }
+    .checkout-btn {
+      width: 100%; padding: 0.75rem;
+      background: var(--mongo-green);
+      border: none; border-radius: 8px;
+      font-size: 0.9375rem; font-weight: 700; color: #fff;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .checkout-btn:hover { background: var(--mongo-green-dark); }
+    .checkout-btn:disabled { opacity: 0.5; cursor: default; }
+    .empty-cart { text-align: center; padding: 2rem; color: var(--mongo-muted); font-size: 0.875rem; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: var(--mongo-green); color: #fff;
+      padding: 0.75rem 1.5rem; border-radius: 10px;
+      font-weight: 700; font-size: 0.875rem;
+      box-shadow: 0 8px 24px rgba(0,104,74,0.3);
+      z-index: 100; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); }
+
+    /* ===== LOADING ===== */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(244,248,246,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .loading-overlay.visible { opacity: 1; pointer-events: auto; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--mongo-border);
+      border-top-color: var(--mongo-green);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-results {
+      text-align: center; padding: 3rem 1rem;
+      color: var(--mongo-muted); font-size: 1rem;
+      grid-column: 1 / -1;
+    }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+    /* ===== FOOTER ===== */
+    .main { flex: 1; }
+    .footer {
+      background: var(--mongo-slate);
+      text-align: center; padding: 1.5rem;
+      font-size: 0.75rem; margin-top: auto;
+      color: rgba(255,255,255,0.5);
+    }
+    .footer strong { color: var(--mongo-green-light); }
+    .footer a { color: var(--mongo-spring); }
+
+    /* ===== SELLER PAGE ===== */
+    .seller-page {
+      display: none; max-width: 1400px; margin: 0 auto; padding: 1rem;
+      flex: 1;
+    }
+    .seller-page.visible { display: block; }
+    .seller-page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .seller-page-header h1 {
+      font-size: 1.5rem; font-weight: 900; color: var(--mongo-green-dark);
+    }
+    .seller-page-header p { font-size: 0.8125rem; color: var(--mongo-muted); margin-top: 0.15rem; }
+    .seller-back-btn {
+      padding: 0.5rem 1rem; border: 1px solid var(--mongo-border); border-radius: 8px;
+      background: #fff; font-size: 0.8125rem; font-weight: 700; cursor: pointer; font-family: inherit;
+      color: var(--mongo-green-dark); transition: background 0.15s;
+    }
+    .seller-back-btn:hover { background: var(--mongo-mist); }
+    .seller-grid {
+      display: grid; grid-template-columns: 360px 1fr; gap: 1.25rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .seller-grid { grid-template-columns: 1fr; } }
+
+    .seller-form-panel {
+      background: var(--mongo-card); border-radius: 12px; padding: 1.5rem;
+      border: 1px solid var(--mongo-border); box-shadow: var(--shadow-card);
+    }
+    .seller-form-panel h2 {
+      font-size: 1rem; font-weight: 800; color: var(--mongo-green-dark); margin-bottom: 0.25rem;
+    }
+    .seller-form-panel .form-sub {
+      font-size: 0.75rem; color: var(--mongo-muted); margin-bottom: 1rem; line-height: 1.5;
+    }
+    .seller-field { margin-bottom: 1rem; }
+    .seller-field label {
+      display: block; font-size: 0.75rem; font-weight: 700; color: var(--mongo-text);
+      margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .seller-input {
+      width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--mongo-border); border-radius: 8px;
+      font-size: 0.9375rem; font-family: inherit; outline: none; background: #fff;
+    }
+    .seller-input:focus { border-color: var(--mongo-green); box-shadow: 0 0 0 3px rgba(0,104,74,0.1); }
+    .seller-submit {
+      width: 100%; padding: 0.75rem; background: var(--mongo-green); color: #fff; border: none; border-radius: 8px;
+      font-size: 0.9375rem; font-weight: 700; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .seller-submit:hover { background: var(--mongo-green-dark); }
+    .seller-submit:disabled { opacity: 0.5; cursor: default; }
+    .seller-what-happens {
+      margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--mongo-border);
+    }
+    .seller-what-happens h3 {
+      font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--mongo-muted); margin-bottom: 0.6rem;
+    }
+    .pipeline-step {
+      display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 0.5rem;
+    }
+    .pipeline-num {
+      width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.625rem; font-weight: 800;
+    }
+    .pipeline-num.green { background: var(--mongo-green); color: #fff; }
+    .pipeline-num.amber { background: #f59e0b; color: #fff; }
+    .pipeline-num.violet { background: #7c3aed; color: #fff; }
+    .pipeline-text { font-size: 0.75rem; color: var(--mongo-text); line-height: 1.45; }
+
+    .seller-feed-panel h2 {
+      font-size: 1rem; font-weight: 800; color: var(--mongo-green-dark); margin-bottom: 0.75rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .feed-live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
+      animation: pulse-live 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-live { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)} }
+
+    .feed-card {
+      background: var(--mongo-card); border: 1px solid var(--mongo-border); border-radius: 12px;
+      padding: 1rem; margin-bottom: 0.75rem; box-shadow: var(--shadow-card);
+      transition: border-color 0.5s, box-shadow 0.5s;
+    }
+    .feed-card.enriched {
+      border-color: var(--mongo-green);
+      box-shadow: 0 0 0 1px var(--mongo-green), 0 2px 8px rgba(0,104,74,0.1);
+    }
+    .feed-card-top {
+      display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;
+    }
+    .feed-card-name { font-size: 1rem; font-weight: 800; color: var(--mongo-text); }
+    .feed-card-price { font-size: 1rem; font-weight: 800; color: var(--mongo-green-dark); }
+    .feed-status {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.6875rem; font-weight: 700; padding: 0.2rem 0.6rem;
+      border-radius: 20px; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .feed-status.pending {
+      background: #fef3c7; color: #92400e;
+    }
+    .feed-status.active { background: #dcfce7; color: #166534; }
+    @keyframes pulse-orange { 0%,100%{opacity:1}50%{opacity:0.5} }
+    .feed-status.pending { animation: pulse-orange 1.5s ease-in-out infinite; }
+
+    .feed-fields { margin-top: 0.75rem; display: grid; gap: 0.5rem; }
+    .feed-field {
+      padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.8125rem; line-height: 1.5;
+    }
+    .feed-field-label {
+      font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+      margin-bottom: 0.2rem;
+    }
+    .feed-field.empty {
+      background: #f8f9fa; border: 1px dashed #d1d5db; color: #9ca3af;
+    }
+    .feed-field.empty .feed-field-label { color: #9ca3af; }
+    .feed-field.filled {
+      background: var(--mongo-mist); border: 1px solid rgba(0,104,74,0.15); color: var(--mongo-text);
+    }
+    .feed-field.filled .feed-field-label { color: var(--mongo-green); }
+    .feed-field-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem; }
+    .feed-tag {
+      font-size: 0.625rem; font-weight: 600; background: var(--mongo-green); color: #fff;
+      padding: 0.15rem 0.45rem; border-radius: 4px;
+    }
+    .feed-field.embedding {
+      background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+      border: 1px solid #c4b5fd; color: #5b21b6;
+    }
+    .feed-field.embedding .feed-field-label { color: #7c3aed; }
+    .feed-field.embedding-empty {
+      background: #f8f9fa; border: 1px dashed #d1d5db; color: #9ca3af;
+    }
+    .feed-field.embedding-empty .feed-field-label { color: #9ca3af; }
+    .feed-enriched-by {
+      margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.6875rem; color: var(--mongo-muted);
+    }
+    .feed-enriched-by .by-badge {
+      background: var(--mongo-slate); color: var(--mongo-green-light);
+      padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 700;
+    }
+
+    /* ===== CHAT BUBBLE ===== */
+    .chat-fab {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 80;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--mongo-green); border: none; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,104,74,0.35);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,104,74,0.45); }
+    .chat-fab svg { width: 28px; height: 28px; fill: #fff; }
+    .chat-panel {
+      position: fixed; bottom: 5.5rem; right: 1.5rem; z-index: 81;
+      width: 400px; max-width: calc(100vw - 2rem); height: 520px; max-height: calc(100vh - 8rem);
+      background: var(--mongo-card); border-radius: 16px;
+      border: 1px solid var(--mongo-border);
+      box-shadow: 0 12px 48px rgba(0,30,43,0.2);
+      display: flex; flex-direction: column;
+      transform: scale(0.9) translateY(20px); opacity: 0; pointer-events: none;
+      transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.25s;
+    }
+    .chat-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+    .chat-header {
+      padding: 0.85rem 1rem; border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--mongo-slate); border-radius: 16px 16px 0 0; color: #fff;
+    }
+    .chat-header h3 { font-size: 0.9rem; font-weight: 800; }
+    .chat-header-sub { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+    .chat-close { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.25rem; cursor: pointer; padding: 0.25rem; }
+    .chat-close:hover { color: #fff; }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .chat-msg {
+      max-width: 85%; padding: 0.65rem 0.85rem; border-radius: 12px;
+      font-size: 0.8125rem; line-height: 1.55; word-wrap: break-word;
+    }
+    .chat-msg.user {
+      align-self: flex-end; background: var(--mongo-green); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-msg.assistant {
+      align-self: flex-start; background: var(--mongo-mist); color: var(--mongo-text);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.tool-info {
+      align-self: flex-start; background: #f0f4ff; color: #4338ca;
+      font-size: 0.75rem; font-weight: 600; padding: 0.4rem 0.7rem;
+      border-radius: 8px; border: 1px solid #c7d2fe;
+    }
+    .chat-msg.thinking {
+      align-self: flex-start; background: var(--mongo-mist); color: var(--mongo-muted);
+      font-size: 0.75rem; font-style: italic;
+    }
+    .chat-input-row {
+      padding: 0.75rem; border-top: 1px solid var(--mongo-border);
+      display: flex; gap: 0.5rem;
+    }
+    .chat-input {
+      flex: 1; border: 1px solid var(--mongo-border); border-radius: 8px;
+      padding: 0.55rem 0.75rem; font-size: 0.8125rem; font-family: inherit; outline: none;
+    }
+    .chat-input:focus { border-color: var(--mongo-green); }
+    .chat-send {
+      background: var(--mongo-green); border: none; border-radius: 8px;
+      padding: 0.55rem 1rem; color: #fff; font-weight: 700; font-size: 0.8125rem;
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .chat-send:hover { background: var(--mongo-green-dark); }
+    .chat-send:disabled { opacity: 0.5; cursor: default; }
+
+    /* ===== TRY-ON MODAL ===== */
+    .tryon-overlay {
+      position: fixed; inset: 0; z-index: 95;
+      background: rgba(0,30,43,0.6); display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .tryon-overlay.open { opacity: 1; pointer-events: auto; }
+    .tryon-modal {
+      background: var(--mongo-card); border-radius: 16px; width: 720px; max-width: 95vw;
+      max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 64px rgba(0,30,43,0.3);
+      transform: scale(0.95); transition: transform 0.25s;
+    }
+    .tryon-overlay.open .tryon-modal { transform: scale(1); }
+    .tryon-modal-header {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--mongo-mist); border-radius: 16px 16px 0 0;
+    }
+    .tryon-modal-header h2 { font-size: 1rem; font-weight: 800; color: var(--mongo-green-dark); }
+    .tryon-modal-close {
+      background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--mongo-muted);
+    }
+    .tryon-body { padding: 1.25rem; }
+    .tryon-upload-area {
+      border: 2px dashed var(--mongo-border); border-radius: 12px; padding: 2rem;
+      text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .tryon-upload-area:hover { border-color: var(--mongo-green); background: var(--mongo-mist); }
+    .tryon-upload-area.has-image { border-style: solid; border-color: var(--mongo-green); padding: 0.5rem; }
+    .tryon-upload-area img { max-width: 100%; max-height: 300px; border-radius: 8px; }
+    .tryon-upload-label { color: var(--mongo-muted); font-size: 0.875rem; }
+    .tryon-upload-label strong { color: var(--mongo-text); display: block; margin-bottom: 0.25rem; font-size: 1rem; }
+    .tryon-product-info {
+      margin-top: 1rem; padding: 0.75rem; background: var(--mongo-mist); border-radius: 8px;
+      font-size: 0.875rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+    .tryon-product-info img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+    .tryon-actions { margin-top: 1rem; display: flex; gap: 0.75rem; }
+    .tryon-btn {
+      flex: 1; padding: 0.7rem; border: none; border-radius: 8px; font-size: 0.875rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s;
+    }
+    .tryon-btn-primary { background: var(--mongo-green); color: #fff; }
+    .tryon-btn-primary:hover { background: var(--mongo-green-dark); }
+    .tryon-btn-primary:disabled { opacity: 0.5; cursor: default; }
+    .tryon-btn-secondary { background: var(--mongo-mist); color: var(--mongo-green-dark); border: 1px solid var(--mongo-border); }
+    .tryon-results { margin-top: 1.25rem; }
+    .tryon-results h3 { font-size: 0.9375rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--mongo-green-dark); }
+    .tryon-analysis {
+      background: var(--mongo-mist); border-radius: 10px; padding: 1rem;
+      font-size: 0.8125rem; line-height: 1.65; color: var(--mongo-text); white-space: pre-wrap;
+    }
+    .tryon-score {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--mongo-green); color: #fff; padding: 0.3rem 0.75rem;
+      border-radius: 20px; font-size: 0.875rem; font-weight: 800; margin-bottom: 0.75rem;
+    }
+    .tryon-gen-image {
+      margin-top: 1rem; text-align: center;
+    }
+    .tryon-gen-image img {
+      max-width: 100%; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .tryon-gen-placeholder {
+      background: var(--mongo-mist); border-radius: 12px; padding: 3rem;
+      color: var(--mongo-muted); font-size: 0.875rem; text-align: center;
+    }
+
+    /* ===== HERO BANNER ===== */
+    .hero-banner {
+      background: linear-gradient(135deg, var(--mongo-green) 0%, var(--mongo-green-dark) 100%);
+      color: #fff;
+      padding: 1.5rem 1.25rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      border: 1px solid rgba(0,237,100,0.15);
+    }
+    .hero-left h2 {
+      font-size: 1.15rem; font-weight: 800; margin-bottom: 0.3rem;
+    }
+    .hero-left p {
+      font-size: 0.8125rem; opacity: 0.8; line-height: 1.5;
+    }
+    .hero-pills {
+      display: flex; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .hero-pill {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 0.3rem 0.65rem; border-radius: 6px;
+      font-size: 0.6875rem; font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ===== EXPLAIN BUTTON (inline, in results bar) ===== */
+    .explain-btn-icon {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--mongo-green); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800; font-style: italic;
+      flex-shrink: 0;
+    }
+    .explain-btn-inline {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.35rem 0.7rem;
+      background: var(--mongo-green); color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 0.75rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: background 0.15s;
+    }
+    .explain-btn-inline:hover { background: var(--mongo-green-dark); }
+    .explain-btn-inline:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ===== EXPLAIN MODAL ===== */
+    .explain-overlay {
+      position: fixed; inset: 0; z-index: 110;
+      background: rgba(0,30,43,0.65);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .explain-overlay.open { opacity: 1; pointer-events: auto; }
+    .explain-modal {
+      background: var(--mongo-card); border-radius: 16px;
+      width: 880px; max-width: 95vw; max-height: 92vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 16px 64px rgba(0,30,43,0.35);
+      transform: scale(0.96); transition: transform 0.25s;
+    }
+    .explain-overlay.open .explain-modal { transform: scale(1); }
+    .explain-header {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(135deg, var(--mongo-green) 0%, var(--mongo-green-dark) 100%);
+      color: #fff; border-radius: 16px 16px 0 0;
+    }
+    .explain-header h2 {
+      font-size: 1rem; font-weight: 800;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .explain-header-sub {
+      font-size: 0.6875rem; font-weight: 600; opacity: 0.8;
+      margin-top: 2px;
+    }
+    .explain-mode-pill {
+      display: inline-block; padding: 0.18rem 0.55rem;
+      background: var(--mongo-green-light); color: var(--mongo-slate);
+      font-size: 0.625rem; font-weight: 800;
+      border-radius: 4px; letter-spacing: 0.05em;
+    }
+    .explain-close {
+      background: rgba(255,255,255,0.15); border: none;
+      width: 32px; height: 32px; border-radius: 8px;
+      color: #fff; font-size: 1.25rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .explain-close:hover { background: rgba(255,255,255,0.25); }
+    .explain-body {
+      overflow-y: auto; padding: 1.25rem; flex: 1;
+    }
+    .explain-stage {
+      margin-bottom: 1.1rem; border: 1px solid var(--mongo-border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .explain-stage-head {
+      padding: 0.7rem 0.9rem;
+      background: var(--mongo-mist);
+      border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .explain-stage-num {
+      width: 24px; height: 24px;
+      background: var(--mongo-green); color: #fff;
+      border-radius: 50%; display: inline-flex;
+      align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .explain-stage-title {
+      font-size: 0.8125rem; font-weight: 800;
+      color: var(--mongo-green-dark);
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .explain-stage-detail {
+      font-size: 0.75rem; color: var(--mongo-muted);
+      padding: 0.6rem 0.9rem 0;
+      line-height: 1.55;
+    }
+    .explain-stage-body { padding: 0.6rem 0.9rem 0.9rem; }
+    .explain-pre {
+      background: var(--mongo-slate); color: #cae8d9;
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.7rem; line-height: 1.5;
+      padding: 0.7rem 0.85rem; border-radius: 8px;
+      max-height: 220px; overflow: auto;
+      white-space: pre; margin-top: 0.5rem;
+    }
+    .explain-toggle {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--mongo-green-dark); padding: 0.2rem 0;
+      margin-top: 0.5rem; font-family: inherit;
+    }
+    .explain-toggle:hover { text-decoration: underline; }
+    .explain-collapsed { display: none; }
+    .explain-table {
+      width: 100%; border-collapse: collapse; margin-top: 0.5rem;
+      font-size: 0.75rem;
+    }
+    .explain-table th {
+      text-align: left; padding: 0.4rem 0.5rem;
+      background: var(--mongo-mist); color: var(--mongo-green-dark);
+      font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+      font-size: 0.625rem;
+      border-bottom: 1px solid var(--mongo-border);
+    }
+    .explain-table td {
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid var(--mongo-border);
+      vertical-align: middle;
+    }
+    .explain-table tr:last-child td { border-bottom: none; }
+    .explain-table .num {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.7rem; text-align: right;
+      color: var(--mongo-text);
+    }
+    .explain-table .rank-cell {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.7rem; font-weight: 700;
+      color: var(--mongo-green-dark);
+    }
+    .explain-table .doc-name { font-weight: 600; color: var(--mongo-text); }
+    .explain-table .moved-up { color: var(--mongo-green); font-weight: 800; }
+    .explain-table .moved-down { color: #cc3340; font-weight: 800; }
+    .explain-table .moved-same { color: var(--mongo-muted); }
+    .explain-emb {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.7rem; color: var(--mongo-text);
+      background: var(--mongo-mist); padding: 0.5rem 0.7rem;
+      border-radius: 6px; margin-top: 0.5rem;
+      word-break: break-all;
+    }
+    .explain-emb-label {
+      font-size: 0.625rem; font-weight: 700; color: var(--mongo-muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      margin-right: 0.5rem;
+    }
+    .explain-formula {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.8125rem; padding: 0.55rem 0.75rem;
+      background: var(--mongo-slate); color: var(--mongo-green-light);
+      border-radius: 6px; margin-top: 0.5rem; display: inline-block;
+    }
+    .explain-callout {
+      margin-top: 0.5rem; padding: 0.55rem 0.7rem;
+      background: #fef9c3; color: #713f12;
+      border-left: 3px solid #ca8a04; border-radius: 4px;
+      font-size: 0.7rem; line-height: 1.5;
+    }
+    .explain-side-by-side {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    }
+    @media (max-width: 720px) {
+      .explain-side-by-side { grid-template-columns: 1fr; }
+    }
+    /* Mental-model intro block at the top of the modal */
+    .explain-intro {
+      padding: 1rem 1.1rem;
+      background: linear-gradient(180deg, #f4faf6 0%, #ffffff 100%);
+      border: 1px solid var(--mongo-border);
+      border-left: 4px solid var(--mongo-green);
+      border-radius: 10px;
+      margin-bottom: 1.1rem;
+      font-size: 0.78rem; line-height: 1.55; color: var(--mongo-text);
+    }
+    .explain-intro h3 {
+      margin: 0 0 0.4rem 0; font-size: 0.85rem;
+      color: var(--mongo-green-dark); font-weight: 800;
+    }
+    .explain-intro p { margin: 0.35rem 0; }
+    .explain-archi {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.7rem; line-height: 1.35;
+      background: var(--mongo-slate); color: #cae8d9;
+      padding: 0.7rem 0.85rem; border-radius: 6px;
+      margin: 0.6rem 0 0.4rem; white-space: pre;
+      overflow-x: auto;
+    }
+    /* Green "what this stage does" callout */
+    .explain-howto {
+      margin-top: 0.5rem; padding: 0.55rem 0.7rem;
+      background: #ecfdf5; color: #064e3b;
+      border-left: 3px solid var(--mongo-green);
+      border-radius: 4px;
+      font-size: 0.72rem; line-height: 1.55;
+    }
+    .explain-howto b { color: #022c22; }
+    /* Intent badge for Retriever C */
+    .explain-intent-badge {
+      display: inline-block;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 0.65rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-left: 0.4rem;
+    }
+    .explain-intent-reviews    { background: #ddd6fe; color: #4c1d95; }
+    .explain-intent-popularity { background: #fde68a; color: #78350f; }
+    .explain-intent-none       { background: #e5e7eb; color: #374151; }
+    /* "Why is #1 ranked first?" winner explainer */
+    .explain-winner {
+      margin-top: 0.7rem; padding: 0.7rem 0.85rem;
+      background: #fff7e6;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: 8px;
+      font-size: 0.75rem; line-height: 1.6; color: #422006;
+    }
+    .explain-winner h4 {
+      margin: 0 0 0.35rem 0; font-size: 0.8rem;
+      color: #78350f; font-weight: 800;
+    }
+    .explain-winner .calc {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.72rem; color: #422006;
+      background: #fffbeb; padding: 0.45rem 0.6rem;
+      border-radius: 5px; margin: 0.4rem 0;
+      display: block; white-space: pre-wrap;
+    }
+    .explain-winner b { color: #78350f; }
+    /* Prior table extras */
+    .explain-table .pri-rating {
+      color: #b45309; font-weight: 700;
+    }
+    .explain-table .pri-reviews {
+      color: var(--mongo-muted); font-size: 0.68rem;
+    }
+    /* ────────── MongoDB Query Inspector modal ────────── */
+    .query-btn-side {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      background: #fff; color: var(--mongo-green-dark);
+      border: 1px solid var(--mongo-green);
+      border-radius: 999px; cursor: pointer;
+      font-size: 0.74rem; font-weight: 700;
+      font-family: inherit; margin-left: 0.5rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .query-btn-side:hover:not(:disabled) {
+      background: var(--mongo-green); color: #fff;
+    }
+    .query-btn-side:disabled { opacity: 0.45; cursor: not-allowed; }
+    .query-btn-icon {
+      display: inline-flex; width: 16px; height: 16px;
+      align-items: center; justify-content: center;
+      background: var(--mongo-green-dark); color: #fff;
+      border-radius: 3px; font-size: 0.62rem; font-weight: 800;
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .query-btn-side:hover .query-btn-icon { background: #fff; color: var(--mongo-green-dark); }
+    .query-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(2px); z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.18s;
+    }
+    .query-overlay.open { opacity: 1; pointer-events: auto; }
+    .query-modal {
+      background: #fff; border-radius: 14px;
+      width: min(960px, 96vw); max-height: 92vh;
+      overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+      transform: scale(0.96); transition: transform 0.18s;
+    }
+    .query-overlay.open .query-modal { transform: scale(1); }
+    .query-header {
+      padding: 1rem 1.25rem;
+      background: linear-gradient(135deg, #0d2b21 0%, var(--mongo-green-dark) 100%);
+      color: #fff; display: flex; align-items: center; justify-content: space-between;
+    }
+    .query-header h2 {
+      margin: 0; font-size: 1rem; font-weight: 800;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .query-header h2 .query-leaf {
+      width: 22px; height: 22px;
+      background: var(--mongo-green); border-radius: 4px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 800;
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .query-header-sub {
+      font-size: 0.72rem; opacity: 0.85; margin-top: 0.2rem;
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .query-close {
+      background: rgba(255,255,255,0.15); border: none; color: #fff;
+      width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+      font-size: 1.1rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .query-close:hover { background: rgba(255,255,255,0.28); }
+    .query-body {
+      overflow-y: auto; padding: 1.1rem 1.25rem; flex: 1;
+      background: #fafbfa;
+    }
+    .query-intro {
+      padding: 0.7rem 0.9rem;
+      background: #ecfdf5; border-left: 4px solid var(--mongo-green);
+      border-radius: 6px; margin-bottom: 1rem;
+      font-size: 0.78rem; line-height: 1.55; color: #064e3b;
+    }
+    .query-intro b { color: #022c22; }
+    .query-section {
+      background: #fff; border: 1px solid var(--mongo-border);
+      border-radius: 10px; margin-bottom: 1rem; overflow: hidden;
+    }
+    .query-section-head {
+      padding: 0.65rem 0.9rem;
+      background: var(--mongo-mist);
+      border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.5rem; flex-wrap: wrap;
+    }
+    .query-section-title {
+      font-size: 0.8125rem; font-weight: 800;
+      color: var(--mongo-green-dark);
+      font-family: 'SF Mono', ui-monospace, monospace;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .query-section-tag {
+      font-size: 0.6rem; font-weight: 800; padding: 2px 8px;
+      border-radius: 999px; letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .query-section-tag.vec { background: #dbeafe; color: #1e3a8a; }
+    .query-section-tag.txt { background: #fde68a; color: #78350f; }
+    .query-section-tag.pri { background: #ddd6fe; color: #4c1d95; }
+    .query-section-tag.rrk { background: #fecaca; color: #7f1d1d; }
+    .query-meta {
+      padding: 0.5rem 0.9rem; font-size: 0.72rem; color: var(--mongo-text);
+      background: #fff; line-height: 1.55;
+      border-bottom: 1px solid var(--mongo-border);
+    }
+    .query-meta code {
+      background: var(--mongo-mist); color: var(--mongo-green-dark);
+      padding: 1px 5px; border-radius: 3px;
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .query-meta .meta-row { margin: 0.18rem 0; }
+    .query-meta .meta-row .meta-k {
+      display: inline-block; min-width: 90px;
+      color: var(--mongo-muted); font-weight: 700;
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .query-pre {
+      background: var(--mongo-slate); color: #cae8d9;
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.72rem; line-height: 1.5;
+      padding: 0.85rem 1rem; border: none;
+      max-height: 380px; overflow: auto;
+      white-space: pre; margin: 0;
+    }
+    .query-pre.bash { color: #fef3c7; }
+    .query-pre .key { color: #93c5fd; }
+    .query-pre .str { color: #fde68a; }
+    .query-pre .num { color: #fca5a5; }
+    .query-pre .punct { color: #9ca3af; }
+    .query-pre .meta-key { color: var(--mongo-green-light); font-weight: 700; }
+    .query-copy {
+      background: var(--mongo-green-dark); color: #fff;
+      border: none; cursor: pointer;
+      padding: 0.32rem 0.7rem; border-radius: 5px;
+      font-size: 0.68rem; font-weight: 700; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      transition: background 0.15s;
+    }
+    .query-copy:hover { background: var(--mongo-green); }
+    .query-copy.copied { background: #166534; }
+    .query-tabs {
+      display: flex; gap: 0; padding: 0 0.9rem;
+      background: #f1f5f3; border-bottom: 1px solid var(--mongo-border);
+    }
+    .query-tab {
+      background: none; border: none; cursor: pointer;
+      padding: 0.55rem 0.85rem; font-size: 0.72rem; font-weight: 700;
+      color: var(--mongo-muted); font-family: inherit;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .query-tab:hover { color: var(--mongo-green-dark); }
+    .query-tab.active {
+      color: var(--mongo-green-dark);
+      border-bottom-color: var(--mongo-green);
+    }
+    .query-tab-panel { display: none; }
+    .query-tab-panel.active { display: block; }
+    .query-tip {
+      margin-top: 0.7rem; padding: 0.55rem 0.7rem;
+      background: #fff7ed; border-left: 3px solid #f59e0b;
+      border-radius: 4px;
+      font-size: 0.7rem; line-height: 1.55; color: #422006;
+    }
+    .query-tip b { color: #78350f; }
+    .query-intent-card {
+      background: #fff; border: 1px solid var(--mongo-border);
+      border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 1rem;
+      font-size: 0.75rem; line-height: 1.55;
+    }
+    .query-intent-card h4 {
+      margin: 0 0 0.4rem 0; font-size: 0.8rem;
+      color: var(--mongo-green-dark); font-weight: 800;
+    }
+    .query-intent-pill {
+      display: inline-block;
+      padding: 2px 9px; border-radius: 999px;
+      font-size: 0.65rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-right: 0.4rem;
+    }
+    .qi-reviews    { background: #ddd6fe; color: #4c1d95; }
+    .qi-popularity { background: #fde68a; color: #78350f; }
+    .qi-none       { background: #e5e7eb; color: #374151; }
+
+    /* ===== IMAGE SEARCH MODAL ===== */
+    .imgsearch-overlay {
+      position: fixed; inset: 0; z-index: 105;
+      background: rgba(0,30,43,0.65);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .imgsearch-overlay.open { opacity: 1; pointer-events: auto; }
+    .imgsearch-modal {
+      background: var(--mongo-card); border-radius: 16px;
+      width: 540px; max-width: 95vw; max-height: 92vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 16px 64px rgba(0,30,43,0.35);
+      transform: scale(0.96); transition: transform 0.25s;
+    }
+    .imgsearch-overlay.open .imgsearch-modal { transform: scale(1); }
+    .imgsearch-header {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--mongo-border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(135deg, var(--mongo-green) 0%, var(--mongo-green-dark) 100%);
+      color: #fff; border-radius: 16px 16px 0 0;
+    }
+    .imgsearch-header h2 {
+      font-size: 1rem; font-weight: 800;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .imgsearch-header-sub {
+      font-size: 0.7rem; opacity: 0.85; margin-top: 2px; line-height: 1.4;
+    }
+    .imgsearch-close {
+      background: rgba(255,255,255,0.15); border: none;
+      width: 32px; height: 32px; border-radius: 8px; color: #fff;
+      font-size: 1.25rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .imgsearch-close:hover { background: rgba(255,255,255,0.25); }
+    .imgsearch-body { padding: 1.25rem; overflow-y: auto; }
+    .imgsearch-drop {
+      border: 2px dashed var(--mongo-border); border-radius: 12px;
+      padding: 1.75rem 1rem; text-align: center;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+      min-height: 200px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 0.4rem;
+    }
+    .imgsearch-drop:hover { border-color: var(--mongo-green); background: var(--mongo-mist); }
+    .imgsearch-drop.has-image { border-style: solid; border-color: var(--mongo-green); padding: 0.5rem; }
+    .imgsearch-drop.dragging { border-color: var(--mongo-green); background: var(--mongo-mist); }
+    .imgsearch-drop img {
+      max-width: 100%; max-height: 280px; border-radius: 8px;
+      object-fit: contain;
+    }
+    .imgsearch-drop-icon {
+      font-size: 2rem; line-height: 1; opacity: 0.4;
+    }
+    .imgsearch-drop-label {
+      font-size: 0.875rem; color: var(--mongo-muted);
+    }
+    .imgsearch-drop-label strong {
+      display: block; font-size: 0.95rem; color: var(--mongo-text);
+      margin-bottom: 0.2rem;
+    }
+    .imgsearch-text-row {
+      margin-top: 0.85rem;
+    }
+    .imgsearch-text-label {
+      font-size: 0.75rem; font-weight: 700; color: var(--mongo-green-dark);
+      display: block; margin-bottom: 0.3rem;
+    }
+    .imgsearch-text-input {
+      width: 100%; padding: 0.55rem 0.75rem;
+      font-size: 0.8125rem; font-family: inherit;
+      border: 1px solid var(--mongo-border); border-radius: 8px;
+      outline: none; transition: border-color 0.15s;
+    }
+    .imgsearch-text-input:focus { border-color: var(--mongo-green); }
+    .imgsearch-text-hint {
+      font-size: 0.7rem; color: var(--mongo-muted); margin-top: 0.25rem;
+    }
+    .imgsearch-footer {
+      padding: 0.85rem 1.25rem; border-top: 1px solid var(--mongo-border);
+      display: flex; gap: 0.5rem; align-items: center;
+      background: var(--mongo-mist); border-radius: 0 0 16px 16px;
+    }
+    .imgsearch-meta {
+      flex: 1; font-size: 0.7rem; color: var(--mongo-muted);
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .imgsearch-go-btn {
+      padding: 0.6rem 1.1rem;
+      background: var(--mongo-green); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 0.8125rem; font-weight: 800; cursor: pointer;
+      font-family: inherit; transition: background 0.15s;
+    }
+    .imgsearch-go-btn:hover:not(:disabled) { background: var(--mongo-green-dark); }
+    .imgsearch-go-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .imgsearch-clear-btn {
+      padding: 0.6rem 0.75rem;
+      background: #fff; color: var(--mongo-muted);
+      border: 1px solid var(--mongo-border); border-radius: 8px;
+      font-size: 0.7rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: border-color 0.15s, color 0.15s;
+    }
+    .imgsearch-clear-btn:hover { border-color: var(--mongo-muted); color: var(--mongo-text); }
+
+    /* Banner shown above results when image search produced them */
+    .imgsearch-banner {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.7rem 0.9rem; margin-bottom: 0.75rem;
+      background: linear-gradient(90deg, var(--mongo-mist) 0%, #ffffff 100%);
+      border: 1px solid var(--mongo-border); border-left: 4px solid var(--mongo-green);
+      border-radius: 8px;
+    }
+    .imgsearch-banner img {
+      width: 56px; height: 56px; border-radius: 6px; object-fit: cover;
+    }
+    .imgsearch-banner-text { flex: 1; font-size: 0.8125rem; color: var(--mongo-text); }
+    .imgsearch-banner-text strong { color: var(--mongo-green-dark); display: block; margin-bottom: 1px; }
+    .imgsearch-banner-text small { color: var(--mongo-muted); font-size: 0.7rem; }
+    .imgsearch-banner-clear {
+      background: none; border: 1px solid var(--mongo-border); cursor: pointer;
+      padding: 0.3rem 0.65rem; border-radius: 6px;
+      font-size: 0.7rem; font-weight: 700; color: var(--mongo-muted);
+      font-family: inherit;
+    }
+    .imgsearch-banner-clear:hover { color: var(--mongo-text); border-color: var(--mongo-muted); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-top">
+    <div class="logo" onclick="location.reload()">
+      <div class="logo-icon">LS</div>
+      <div>
+        <span class="logo-text">LeafyShop</span>
+        <span class="logo-sub">Powered by MongoDB Atlas</span>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <select class="search-mode-select" id="modeSelect">
+        <option value="hybrid">Hybrid (RRF)</option>
+        <option value="rerank">Hybrid + Rerank</option>
+      </select>
+      <input class="search-input" type="search" id="q" placeholder='Try "recommend me graphics cards under $2000"...' autocomplete="off" />
+      <button class="camera-btn" id="cameraBtn" aria-label="Search by image" title="Search by image (multimodal)">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span class="camera-btn-label">Image</span>
+      </button>
+      <button class="search-btn" id="searchBtn" aria-label="Search">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <button class="header-btn" id="sellerBtn">
+        <span class="header-btn-sub">Seller</span>
+        <span class="header-btn-main">Dashboard</span>
+      </button>
+      <button class="header-btn" id="ordersBtn">
+        <span class="header-btn-sub">Your</span>
+        <span class="header-btn-main">Orders</span>
+      </button>
+      <button class="cart-btn-header" id="cartBtn">
+        <div class="cart-icon-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="cart-badge hidden" id="cartCount">0</span>
+        </div>
+        <span class="cart-label">Cart</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- Cart Drawer -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-header">
+    <h2 id="drawerTitle">Shopping Cart</h2>
+    <button class="drawer-close" id="drawerClose">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-footer" id="drawerFooter"></div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <aside class="sidebar">
+    <h3>Search Mode</h3>
+    <div class="filter-group">
+      <label class="filter-option"><input type="radio" name="mode" value="hybrid" checked> Hybrid (RRF) <span class="mode-badge">DEFAULT</span></label>
+      <label class="filter-option"><input type="radio" name="mode" value="rerank"> Hybrid + Rerank</label>
+    </div>
+    <h3>Department</h3>
+    <div class="filter-group" id="sidebarCategories">
+      <label class="filter-option"><input type="radio" name="cat" value="" checked> All Departments</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Shoes"> Shoes</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Clothing"> Clothing</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Electronics"> Electronics</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Home & Kitchen"> Home & Kitchen</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Sports & Outdoors"> Sports & Outdoors</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Beauty & Personal Care"> Beauty & Personal Care</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Books & Stationery"> Books & Stationery</label>
+      <label class="filter-option"><input type="radio" name="cat" value="Bags & Accessories"> Bags & Accessories</label>
+    </div>
+  </aside>
+
+  <section class="content">
+    <div class="hero-banner">
+      <div class="hero-left">
+        <h2>Search smarter with MongoDB Atlas</h2>
+        <p>Experience Vector Search, Full-Text Search, Hybrid Fusion, and Voyage AI Reranking — all in one shop.</p>
+      </div>
+      <div class="hero-pills">
+        <span class="hero-pill">Atlas Vector Search</span>
+        <span class="hero-pill">Voyage AI</span>
+        <span class="hero-pill">Hybrid RRF</span>
+        <span class="hero-pill">Reranking</span>
+      </div>
+    </div>
+    <div class="imgsearch-banner" id="imgsearchBanner" style="display:none">
+      <img id="imgsearchBannerImg" alt="Query image" />
+      <div class="imgsearch-banner-text">
+        <strong>Image search results</strong>
+        <span id="imgsearchBannerSub">—</span>
+      </div>
+      <button class="imgsearch-banner-clear" id="imgsearchBannerClear">Clear &times;</button>
+    </div>
+    <div class="results-bar" id="resultsBar">
+      <div class="results-count" id="resultsCount">Search for products to get started</div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="explain-btn-inline" id="explainBtnInline" disabled>
+          <span class="explain-btn-icon" style="background:rgba(255,255,255,0.2);width:14px;height:14px;font-size:0.6rem">i</span>
+          How was this ranked?
+        </button>
+        <button class="query-btn-side" id="queryBtnInline" disabled style="margin-left:0">
+          <span class="query-btn-icon">{ }</span>
+          View MongoDB Query
+        </button>
+      </div>
+    </div>
+    <div class="product-grid" id="results"></div>
+  </section>
+</div>
+
+<!-- SELLER PAGE (full-page, hidden by default) -->
+<div class="seller-page" id="sellerPage">
+  <div class="seller-page-header">
+    <div>
+      <h1>Seller Dashboard</h1>
+      <p>Add products and watch AI enrich them in real time via Change Streams</p>
+    </div>
+    <button class="seller-back-btn" id="sellerBackBtn">&larr; Back to Shop</button>
+  </div>
+  <div class="seller-grid">
+    <div class="seller-form-panel">
+      <h2>List a New Product</h2>
+      <p class="form-sub">Enter just a name and price. The AI Enrichment Agent will generate everything else automatically.</p>
+      <div class="seller-field">
+        <label>Product Name</label>
+        <input class="seller-input" id="sellerName" placeholder="e.g. Wireless Noise-Cancelling Headphones" />
+      </div>
+      <div class="seller-field">
+        <label>Price ($)</label>
+        <input class="seller-input" id="sellerPrice" type="number" step="0.01" min="0" placeholder="89.99" />
+      </div>
+      <button class="seller-submit" id="sellerSubmit">List Product</button>
+
+      <div class="seller-what-happens">
+        <h3>What happens next</h3>
+        <div class="pipeline-step">
+          <div class="pipeline-num green">1</div>
+          <div class="pipeline-text"><strong>MongoDB Insert</strong> — product saved with <code>status: "pending_enrichment"</code></div>
+        </div>
+        <div class="pipeline-step">
+          <div class="pipeline-num green">2</div>
+          <div class="pipeline-text"><strong>Change Stream</strong> fires — Catalog Watcher detects the new insert</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="pipeline-num amber">3</div>
+          <div class="pipeline-text"><strong>Claude 4.5 Haiku</strong> generates description, category, tags, and brand</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="pipeline-num violet">4</div>
+          <div class="pipeline-text"><strong>Voyage AI</strong> embeds the description into a 1024d vector</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="pipeline-num green">5</div>
+          <div class="pipeline-text"><strong>MongoDB Update</strong> — document enriched, <code>status: "active"</code>, searchable</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="seller-feed-panel">
+      <h2><span class="feed-live-dot"></span> Live Product Feed <span style="font-weight:400;font-size:0.75rem;color:var(--mongo-muted)">(polls every 2s)</span></h2>
+      <div id="sellerFeed"><div class="empty-results">No products added yet. List one using the form!</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Chat Bubble -->
+<button class="chat-fab" id="chatFab" aria-label="AI Shopping Agent">
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <div><h3>Product Support Agent</h3><span class="chat-header-sub">Ollama + MongoDB · explicit tool loop</span></div>
+    <button class="chat-close" id="chatClose">&times;</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg assistant">Hi! I'm the <b>LeafyShop Product Support Agent</b>. Ask about returns, shipping, product compatibility, or catalog search. Try: <b>"What is your returns policy?"</b> or <b>"Tell me about vector search on LeafyShop"</b>. Say <b>remember that I prefer concise answers</b> to test session memory.</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" type="text" placeholder="Ask about policies, products, or compatibility..." />
+    <button class="chat-send" id="chatSend">Send</button>
+  </div>
+</div>
+
+<!-- Try-On Modal -->
+<div class="tryon-overlay" id="tryonOverlay">
+  <div class="tryon-modal">
+    <div class="tryon-modal-header">
+      <h2 id="tryonTitle">Virtual Try-On</h2>
+      <button class="tryon-modal-close" id="tryonClose">&times;</button>
+    </div>
+    <div class="tryon-body" id="tryonBody">
+      <div class="tryon-product-info" id="tryonProductInfo"></div>
+      <div class="tryon-upload-area" id="tryonUpload">
+        <div class="tryon-upload-label">
+          <strong>Upload Your Photo</strong>
+          Click or drag a photo here for virtual try-on
+        </div>
+      </div>
+      <input type="file" id="tryonFileInput" accept="image/*" style="display:none" />
+      <div class="tryon-actions">
+        <button class="tryon-btn tryon-btn-primary" id="tryonAnalyzeBtn" disabled>Analyze Style</button>
+        <button class="tryon-btn tryon-btn-primary" id="tryonGenerateBtn" disabled>Generate Try-On</button>
+        <button class="tryon-btn tryon-btn-secondary" id="tryonSaveBtn" disabled>Save &amp; Recommend</button>
+      </div>
+      <div class="tryon-results" id="tryonResults" style="display:none">
+        <h3>Style Analysis</h3>
+        <div id="tryonScoreArea"></div>
+        <div class="tryon-analysis" id="tryonAnalysis"></div>
+        <div class="tryon-gen-image" id="tryonGenImage">
+          <div class="tryon-gen-placeholder">Click "Generate Try-On" to create a visualization</div>
+        </div>
+      </div>
+      <div id="tryonRecommendations" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Search Modal -->
+<div class="imgsearch-overlay" id="imgsearchOverlay">
+  <div class="imgsearch-modal">
+    <div class="imgsearch-header">
+      <div>
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4"/></svg>
+          Search by Image
+        </h2>
+        <div class="imgsearch-header-sub">
+          Upload a photo &mdash; e.g. a model wearing an outfit &mdash; and we'll surface matching products.
+          <br/>Powered by <strong>voyage-multimodal-3.5</strong> on Atlas Vector Search.
+        </div>
+      </div>
+      <button class="imgsearch-close" id="imgsearchClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="imgsearch-body">
+      <div class="imgsearch-drop" id="imgsearchDrop">
+        <div class="imgsearch-drop-icon">📷</div>
+        <div class="imgsearch-drop-label">
+          <strong>Click or drag a photo here</strong>
+          JPEG / PNG / WebP up to 10&nbsp;MB
+        </div>
+      </div>
+      <input type="file" id="imgsearchFile" accept="image/*" style="display:none" />
+      <div class="imgsearch-text-row">
+        <label class="imgsearch-text-label" for="imgsearchText">Optional refinement (text)</label>
+        <input class="imgsearch-text-input" type="text" id="imgsearchText" placeholder="e.g. similar but in red, or under $50" />
+        <div class="imgsearch-text-hint">Leave blank to find products that visually match the photo. Add text to refine across modalities.</div>
+      </div>
+    </div>
+    <div class="imgsearch-footer">
+      <div class="imgsearch-meta" id="imgsearchMeta"></div>
+      <button class="imgsearch-clear-btn" id="imgsearchClearBtn">Clear</button>
+      <button class="imgsearch-go-btn" id="imgsearchGoBtn" disabled>Find similar products</button>
+    </div>
+  </div>
+</div>
+
+<!-- Explain (Search Pipeline) Modal -->
+<div class="explain-overlay" id="explainOverlay">
+  <div class="explain-modal">
+    <div class="explain-header">
+      <div>
+        <h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search Pipeline
+          <span class="explain-mode-pill" id="explainModePill">HYBRID</span>
+        </h2>
+        <div class="explain-header-sub" id="explainHeaderSub">Query: —</div>
+      </div>
+      <button class="explain-close" id="explainClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="explain-body" id="explainBody">
+      <div style="text-align:center;color:var(--mongo-muted);font-size:0.85rem;padding:2rem">Loading pipeline diagnostics…</div>
+    </div>
+  </div>
+</div>
+
+<!-- MongoDB Query Inspector modal -->
+<div class="query-overlay" id="queryOverlay">
+  <div class="query-modal">
+    <div class="query-header">
+      <div>
+        <h2>
+          <span class="query-leaf">{ }</span>
+          MongoDB Query Inspector
+        </h2>
+        <div class="query-header-sub" id="queryHeaderSub">Query: —</div>
+      </div>
+      <button class="query-close" id="queryClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="query-body" id="queryBody">
+      <div style="text-align:center;color:var(--mongo-muted);font-size:0.85rem;padding:2rem">Loading MongoDB queries…</div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>&copy; 2026 <strong>LeafyShop</strong> &mdash; GenAI Workshop Demo &middot; Powered by <strong>MongoDB Atlas Vector Search</strong> &middot; <strong>Voyage AI</strong> Embeddings</p>
+</footer>
+
+<script>
+(function () {
+  var CART_KEY = "ls_cart";
+  var cart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+  var mode = "hybrid";
+  var category = "";
+  var debounceTimer = null;
+  var lastResults = [];
+
+  var qEl = document.getElementById("q");
+  var modeSelect = document.getElementById("modeSelect");
+  var resultsEl = document.getElementById("results");
+  var resultsCount = document.getElementById("resultsCount");
+  var loadingEl = document.getElementById("loading");
+  var toastEl = document.getElementById("toast");
+  var cartBtn = document.getElementById("cartBtn");
+  var cartCountEl = document.getElementById("cartCount");
+  var ordersBtn = document.getElementById("ordersBtn");
+  var drawer = document.getElementById("drawer");
+  var drawerBackdrop = document.getElementById("drawerBackdrop");
+  var drawerClose = document.getElementById("drawerClose");
+  var drawerTitle = document.getElementById("drawerTitle");
+  var drawerBody = document.getElementById("drawerBody");
+  var drawerFooter = document.getElementById("drawerFooter");
+  var searchBtn = document.getElementById("searchBtn");
+  var explainBtnInline = document.getElementById("explainBtnInline");
+  var explainOverlay = document.getElementById("explainOverlay");
+  var explainClose = document.getElementById("explainClose");
+  var explainBody = document.getElementById("explainBody");
+  var explainModePill = document.getElementById("explainModePill");
+  var explainHeaderSub = document.getElementById("explainHeaderSub");
+
+  // MongoDB Query Inspector modal
+  var queryBtnInline = document.getElementById("queryBtnInline");
+  var queryOverlay = document.getElementById("queryOverlay");
+  var queryClose = document.getElementById("queryClose");
+  var queryBody = document.getElementById("queryBody");
+  var queryHeaderSub = document.getElementById("queryHeaderSub");
+  var lastExplainData = null;  // cached explain payload — reused by both modals
+
+  var lastQuery = "";
+
+  var BEDROCK_API = (window.BEDROCK_API_URL || "");
+  var sellerBtn = document.getElementById("sellerBtn");
+  var chatFab = document.getElementById("chatFab");
+  var chatPanel = document.getElementById("chatPanel");
+  var chatClose = document.getElementById("chatClose");
+  var chatMessages = document.getElementById("chatMessages");
+  var chatInput = document.getElementById("chatInput");
+  var chatSend = document.getElementById("chatSend");
+  var tryonOverlay = document.getElementById("tryonOverlay");
+  var tryonClose = document.getElementById("tryonClose");
+  var tryonUpload = document.getElementById("tryonUpload");
+  var tryonFileInput = document.getElementById("tryonFileInput");
+  var tryonAnalyzeBtn = document.getElementById("tryonAnalyzeBtn");
+  var tryonGenerateBtn = document.getElementById("tryonGenerateBtn");
+  var tryonSaveBtn = document.getElementById("tryonSaveBtn");
+  var tryonResults = document.getElementById("tryonResults");
+  var tryonAnalysis = document.getElementById("tryonAnalysis");
+  var tryonScoreArea = document.getElementById("tryonScoreArea");
+  var tryonGenImage = document.getElementById("tryonGenImage");
+  var tryonProductInfo = document.getElementById("tryonProductInfo");
+  var tryonRecommendations = document.getElementById("tryonRecommendations");
+  var tryonBody = document.getElementById("tryonBody");
+
+  var chatHistory = [];
+  var supportSessionId = localStorage.getItem("leafyshop_support_session") || "";
+  if (!supportSessionId) {
+    supportSessionId = "sess-" + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem("leafyshop_support_session", supportSessionId);
+  }
+  var tryonState = { product: null, imageBase64: null, analysis: null, generatedImage: null };
+
+  var TRYABLE_CATEGORIES = ["Clothing", "Shoes", "Bags & Accessories"];
+
+  var CATEGORY_IMAGES = {
+    "Shoes": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop",
+    "Clothing": "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&h=300&fit=crop",
+    "Electronics": "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&h=300&fit=crop",
+    "Home & Kitchen": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop",
+    "Sports & Outdoors": "https://images.unsplash.com/photo-1461896836934-bd45ba048ba7?w=400&h=300&fit=crop",
+    "Beauty & Personal Care": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=300&fit=crop",
+    "Books & Stationery": "https://images.unsplash.com/photo-1524578271613-d550eacf6090?w=400&h=300&fit=crop",
+    "Bags & Accessories": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=300&fit=crop"
+  };
+
+  // Per-subcategory photos — far more relevant than the broad category image.
+  // (A product's own `image_url`, when present, always wins over these.)
+  var SUBCATEGORY_IMAGES = {
+    "headphones": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop",
+    "speakers": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=300&fit=crop",
+    "smartwatches": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&h=300&fit=crop",
+    "phone cases": "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&h=300&fit=crop",
+    "chargers": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=400&h=300&fit=crop",
+    "cables": "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=400&h=300&fit=crop",
+    "keyboards": "https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400&h=300&fit=crop",
+    "mice": "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400&h=300&fit=crop",
+    "graphics cards": "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=400&h=300&fit=crop",
+    "processors": "https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=400&h=300&fit=crop",
+    "monitors": "https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=400&h=300&fit=crop",
+    "laptops": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&h=300&fit=crop"
+  };
+
+  var CATEGORY_EMOJIS = {
+    "Shoes": "\uD83D\uDC5F", "Clothing": "\uD83D\uDC55", "Electronics": "\uD83D\uDCBB",
+    "Home & Kitchen": "\uD83C\uDFE0", "Sports & Outdoors": "\u26BD",
+    "Beauty & Personal Care": "\uD83D\uDC84", "Books & Stationery": "\uD83D\uDCDA",
+    "Bags & Accessories": "\uD83D\uDC5C"
+  };
+
+  function esc(t) { return t ? String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;") : ""; }
+  function setLoading(on) { loadingEl.classList.toggle("visible", on); }
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("visible");
+    setTimeout(function() { toastEl.classList.remove("visible"); }, 2500);
+  }
+  function saveCart() {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    var total = cart.reduce(function(s,i) { return s + i.quantity; }, 0);
+    cartCountEl.textContent = total;
+    cartCountEl.classList.toggle("hidden", total === 0);
+  }
+
+  function starsHtml(rating) {
+    var n = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+    var s = "";
+    for (var i = 0; i < 5; i++) s += i < n ? "\u2605" : "\u2606";
+    return '<span class="stars">' + s + "</span>";
+  }
+
+  function scoreClass(score, m) {
+    if (m === "rerank") return score >= 0.7 ? "score-high" : score >= 0.3 ? "score-med" : "score-low";
+    if (m === "vector") return score >= 0.75 ? "score-high" : score >= 0.5 ? "score-med" : "score-low";
+    return score >= 0.025 ? "score-high" : score >= 0.015 ? "score-med" : "score-low";
+  }
+
+  function scoreLabel(m) {
+    return m === "rerank" ? "relevance" : m === "vector" ? "similarity" : m === "text" ? "text score" : "RRF";
+  }
+
+  function getProductImage(p) {
+    if (p && p.image_url) return p.image_url;
+    if (p && p.subcategory && SUBCATEGORY_IMAGES[p.subcategory]) return SUBCATEGORY_IMAGES[p.subcategory];
+    return CATEGORY_IMAGES[p.category] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop";
+  }
+
+  function formatPrice(price) {
+    var parts = Number(price).toFixed(2).split(".");
+    return '<span class="price-symbol">$</span><span class="price-whole">' + parts[0] + '</span><span class="price-fraction">.' + parts[1] + '</span>';
+  }
+
+  function renderResults(data) {
+    var list = (data && data.results) || [];
+    lastResults = list;
+    var q = (data && data.query) || "";
+    var m = (data && data.mode) || mode;
+
+    if (m === "browse") {
+      resultsCount.innerHTML = '<span>' + list.length + '</span> ' +
+        (data && data.category ? 'products in <b>' + esc(data.category) + '</b>' : 'featured products') +
+        ' &middot; browse';
+    } else {
+      resultsCount.innerHTML = q
+        ? '<span>' + list.length + '</span> results for "<b>' + esc(q) + '</b>" &middot; <b>' + m + '</b> search'
+        : 'Search for products to get started';
+    }
+
+    if (!list.length) {
+      resultsEl.innerHTML = '<div class="empty-results">No products found. Try a different search or category.</div>';
+      return;
+    }
+
+    resultsEl.innerHTML = list.map(function(p, idx) {
+      var img = getProductImage(p);
+      var sc = p.score;
+      var hasScore = typeof sc === "number";
+      var sClass = scoreClass(sc, m);
+      var sLabel = scoreLabel(m);
+      var scDisplay = hasScore ? sc.toFixed(4) : sc;
+      var emoji = CATEGORY_EMOJIS[p.category] || "\uD83D\uDCE6";
+
+      // Spec highlight chips for structured, spec-rich products (GPUs, CPUs, monitors...).
+      var specs = (p.spec_highlights || []).slice(0, 4);
+      var specsHtml = specs.length
+        ? '<div class="product-specs">' + specs.map(function(s) { return '<span class="spec-chip">' + esc(s) + '</span>'; }).join("") + '</div>'
+        : '';
+
+      // Tidy tags: dedupe (case-insensitive), drop blanks + category/subcategory echoes, cap at 3.
+      var seen = {}, tags = [];
+      (p.tags || []).forEach(function(t) {
+        var key = String(t || "").trim().toLowerCase();
+        if (!key || seen[key]) return;
+        if (key === String(p.category || "").toLowerCase()) return;
+        if (key === String(p.subcategory || "").toLowerCase()) return;
+        seen[key] = 1; tags.push(t);
+      });
+      tags = tags.slice(0, 3);
+
+      return (
+        '<article class="product-card">' +
+          '<div class="product-img">' +
+            '<img src="' + img + '" alt="' + esc(p.name) + '" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+            '<div class="product-img-placeholder" style="display:none">' + emoji + '</div>' +
+            (p.in_stock !== false ? '<span class="leafy-badge">LeafyChoice</span>' : '') +
+            (hasScore ? '<span class="rank-badge">#' + (idx + 1) + '</span>' : '') +
+          '</div>' +
+          '<div class="product-body">' +
+            '<div class="product-category">' + esc(p.category || "") + (p.subcategory ? ' \u00b7 ' + esc(p.subcategory) : '') + '</div>' +
+            '<div class="product-name">' + esc(p.name) + '</div>' +
+            '<div class="product-rating">' +
+              starsHtml(p.rating) +
+              '<span class="rating-count">' + (p.reviews_count || 0).toLocaleString() + '</span>' +
+            '</div>' +
+            '<div class="product-price">' + formatPrice(p.price) + '</div>' +
+            (p.in_stock !== false
+              ? '<div class="product-stock">In Stock</div>'
+              : '<div class="product-stock out">Out of Stock</div>') +
+            (hasScore ? '<div class="product-score ' + sClass + '">' + sLabel + ': ' + scDisplay + '</div>' : '') +
+            specsHtml +
+            (tags.length ? '<div class="product-tags">' + tags.map(function(t) { return '<span class="product-tag">' + esc(t) + '</span>'; }).join("") + '</div>' : '') +
+            '<p class="product-desc">' + esc(p.description || "") + '</p>' +
+            '<button class="add-btn" data-idx="' + idx + '">Add to Cart</button>' +
+            (TRYABLE_CATEGORIES.indexOf(p.category) !== -1
+              ? '<button class="add-btn" style="margin-top:0.3rem;background:var(--mongo-slate)" data-tryon="' + idx + '">Try On</button>'
+              : '') +
+          '</div>' +
+        '</article>'
+      );
+    }).join("");
+
+    resultsEl.querySelectorAll(".add-btn[data-idx]").forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        var i = parseInt(btn.getAttribute("data-idx"), 10);
+        addToCart(lastResults[i]);
+        btn.textContent = "Added!";
+        btn.classList.add("added");
+        setTimeout(function() { btn.textContent = "Add to Cart"; btn.classList.remove("added"); }, 1200);
+      });
+    });
+    resultsEl.querySelectorAll("[data-tryon]").forEach(function(btn) {
+      btn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        var i = parseInt(btn.getAttribute("data-tryon"), 10);
+        openTryOn(lastResults[i]);
+      });
+    });
+  }
+
+  function addToCart(product) {
+    var existing = cart.find(function(c) { return c.name === product.name; });
+    if (existing) existing.quantity += 1;
+    else cart.push({ name: product.name, price: product.price, category: product.category || "", brand: product.brand || "", quantity: 1 });
+    saveCart();
+    showToast("Added to cart: " + product.name);
+  }
+
+  function setExplainEnabled(enabled) {
+    if (explainBtnInline) explainBtnInline.disabled = !enabled;
+    if (queryBtnInline) queryBtnInline.disabled = !enabled;
+  }
+
+  // Browse listings without a search query (page load, cleared search, or a
+  // department click). Backed by the plain GET /api/products find() endpoint.
+  function loadBrowse(cat) {
+    var banner = document.getElementById('imgsearchBanner');
+    if (banner) banner.style.display = 'none';
+    setLoading(true);
+    var params = new URLSearchParams();
+    params.set("limit", "12");
+    if (cat) params.set("category", cat);
+    fetch("api/products?" + params.toString())
+      .then(function(r) {
+        // A stale server (started before /api/products existed) returns 404 —
+        // surface that clearly instead of rendering an empty "No products found".
+        if (!r.ok) throw new Error("HTTP " + r.status + " from /api/products");
+        return r.json();
+      })
+      .then(function(data) {
+        if (!data || !data.results) throw new Error("response had no 'results' field");
+        renderResults(data);
+      })
+      .catch(function(err) {
+        resultsEl.innerHTML = '<div class="empty-results">Couldn\'t load products (' + esc(String(err.message || err)) +
+          ').<br>If you just added the <code>/api/products</code> endpoint, restart the API server (uvicorn).</div>';
+        resultsCount.innerHTML = 'Search for products to get started';
+      })
+      .finally(function() {
+        lastQuery = "";
+        lastExplainData = null;
+        setExplainEnabled(false);   // explain/query modals need a search query
+        setLoading(false);
+      });
+  }
+
+  function runSearch() {
+    var q = (qEl.value || "").trim();
+    // any text search supersedes a previous image search — hide the banner
+    var banner = document.getElementById('imgsearchBanner');
+    if (banner) banner.style.display = 'none';
+    if (!q) {
+      // Empty query → fall back to browsing the (optionally filtered) catalog.
+      loadBrowse(category);
+      return;
+    }
+    setLoading(true);
+    var params = new URLSearchParams();
+    params.set("q", q); params.set("mode", mode);
+    if (category) params.set("category", category);
+    fetch("api/search?" + params.toString())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        renderResults(data);
+        lastQuery = q;
+        lastExplainData = null;  // invalidate cached explain payload for the new query
+        setExplainEnabled((data && data.results && data.results.length > 0));
+      })
+      .catch(function() {
+        resultsEl.innerHTML = '<div class="empty-results">Something went wrong. Is the API running?</div>';
+        setExplainEnabled(false);
+      })
+      .finally(function() { setLoading(false); });
+  }
+
+  function scheduleSearch() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(runSearch, 300);
+  }
+
+  qEl.addEventListener("input", scheduleSearch);
+  searchBtn.addEventListener("click", runSearch);
+  qEl.addEventListener("keydown", function(e) { if (e.key === "Enter") runSearch(); });
+
+  modeSelect.addEventListener("change", function() {
+    mode = modeSelect.value;
+    document.querySelectorAll('input[name="mode"]').forEach(function(r) { r.checked = r.value === mode; });
+    if ((qEl.value || "").trim()) runSearch();
+  });
+
+  document.querySelectorAll('input[name="mode"]').forEach(function(r) {
+    r.addEventListener("change", function() {
+      mode = r.value;
+      modeSelect.value = mode;
+      if ((qEl.value || "").trim()) runSearch();
+    });
+  });
+
+  document.querySelectorAll('input[name="cat"]').forEach(function(r) {
+    r.addEventListener("change", function() {
+      category = r.value;
+      if ((qEl.value || "").trim()) runSearch();
+      else loadBrowse(category);   // browse the department even without a query
+    });
+  });
+
+  /* Cart drawer */
+  function renderCartDrawer() {
+    drawerTitle.textContent = "Shopping Cart (" + cart.reduce(function(s,i) { return s + i.quantity; }, 0) + ")";
+    if (!cart.length) {
+      drawerBody.innerHTML = '<div class="empty-cart">Your LeafyShop cart is empty.<br>Search and add items!</div>';
+      drawerFooter.innerHTML = ""; return;
+    }
+    var total = 0;
+    drawerBody.innerHTML = cart.map(function(item, idx) {
+      var sub = item.price * item.quantity; total += sub;
+      return '<div class="cart-item"><div class="cart-item-info">' +
+        '<div class="cart-item-name">' + esc(item.name) + '</div>' +
+        '<div class="cart-item-meta">' + esc(item.brand) + (item.category ? " \u00b7 " + esc(item.category) : "") + '</div>' +
+        '<div class="cart-item-actions">' +
+          '<button class="qty-btn" data-action="dec" data-idx="' + idx + '">\u2212</button>' +
+          '<span class="qty-val">' + item.quantity + '</span>' +
+          '<button class="qty-btn" data-action="inc" data-idx="' + idx + '">+</button>' +
+          '<button class="remove-btn" data-action="remove" data-idx="' + idx + '">Remove</button>' +
+        '</div></div>' +
+        '<div class="cart-item-price">$' + sub.toFixed(2) + '</div></div>';
+    }).join("");
+    drawerFooter.innerHTML =
+      '<div class="cart-total"><span>Subtotal</span><span>$' + total.toFixed(2) + '</span></div>' +
+      '<button class="checkout-btn" id="checkoutBtn">Proceed to Checkout</button>';
+    document.getElementById("checkoutBtn").addEventListener("click", doCheckout);
+  }
+
+  drawerBody.addEventListener("click", function(e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    var idx = parseInt(btn.getAttribute("data-idx"), 10);
+    var action = btn.getAttribute("data-action");
+    if (action === "inc") cart[idx].quantity += 1;
+    else if (action === "dec") cart[idx].quantity = Math.max(1, cart[idx].quantity - 1);
+    else if (action === "remove") cart.splice(idx, 1);
+    saveCart(); renderCartDrawer();
+  });
+
+  function doCheckout() {
+    if (!cart.length) return;
+    var btn = document.getElementById("checkoutBtn");
+    btn.disabled = true; btn.textContent = "Processing\u2026";
+    fetch("api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_name: "LeafyShop User", items: cart, search_mode: mode })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { showToast("Error: " + data.error); return; }
+      cart = []; saveCart(); closeDrawer();
+      showToast("Order placed! " + data.item_count + " items \u00b7 $" + data.total.toFixed(2));
+    })
+    .catch(function() { showToast("Checkout failed."); })
+    .finally(function() { if (btn) { btn.disabled = false; btn.textContent = "Proceed to Checkout"; } });
+  }
+
+  function renderOrdersDrawer() {
+    drawerTitle.textContent = "Your Orders";
+    drawerBody.innerHTML = '<div class="empty-cart">Loading\u2026</div>';
+    drawerFooter.innerHTML = "";
+    fetch("api/orders?user_name=LeafyShop%20User")
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var orders = data.orders || [];
+        if (!orders.length) { drawerBody.innerHTML = '<div class="empty-cart">No orders yet.</div>'; return; }
+        drawerBody.innerHTML = orders.map(function(o) {
+          var products = (o.items || []).map(function(i) { return i.name + " \u00d7" + i.quantity; }).join(", ");
+          var date = o.created_at ? new Date(o.created_at).toLocaleString() : "";
+          return '<div style="border:1px solid var(--mongo-border);border-radius:8px;padding:0.75rem;margin-bottom:0.5rem;background:var(--mongo-mist);">' +
+            '<div style="display:flex;justify-content:space-between;font-size:0.8125rem;font-weight:700;">' +
+              '<span style="color:var(--mongo-muted);font-family:monospace">' + (o._id || "").slice(-8) + '</span>' +
+              '<span style="color:var(--mongo-green-dark)">$' + (o.total || 0).toFixed(2) + '</span>' +
+            '</div>' +
+            '<div style="font-size:0.75rem;color:var(--mongo-muted);margin-top:0.25rem">' + date + ' \u00b7 ' + esc(o.search_mode_used || "hybrid") + '</div>' +
+            '<div style="font-size:0.8125rem;color:var(--mongo-text);margin-top:0.25rem">' + esc(products) + '</div>' +
+          '</div>';
+        }).join("");
+      })
+      .catch(function() { drawerBody.innerHTML = '<div class="empty-cart">Could not load orders.</div>'; });
+  }
+
+  function openDrawer(type) {
+    if (type === "orders") renderOrdersDrawer();
+    else renderCartDrawer();
+    drawer.classList.add("open");
+    drawerBackdrop.classList.add("open");
+  }
+  function closeDrawer() {
+    drawer.classList.remove("open");
+    drawerBackdrop.classList.remove("open");
+  }
+
+  cartBtn.addEventListener("click", function() { openDrawer("cart"); });
+  ordersBtn.addEventListener("click", function() { openDrawer("orders"); });
+  drawerClose.addEventListener("click", closeDrawer);
+  drawerBackdrop.addEventListener("click", closeDrawer);
+
+  /* ===== SELLER DASHBOARD (full page) ===== */
+  var sellerPage = document.getElementById("sellerPage");
+  var sellerBackBtn = document.getElementById("sellerBackBtn");
+  var shopMain = document.querySelector(".main");
+  var shopFooter = document.querySelector(".footer");
+  var sellerPollTimer = null;
+  var sellerVisible = false;
+
+  function showSellerPage() {
+    sellerVisible = true;
+    shopMain.style.display = "none";
+    shopFooter.style.display = "none";
+    sellerPage.classList.add("visible");
+    sellerBtn.style.borderColor = "var(--mongo-green-light)";
+    startSellerPoll();
+  }
+
+  function hideSellerPage() {
+    sellerVisible = false;
+    sellerPage.classList.remove("visible");
+    shopMain.style.display = "";
+    shopFooter.style.display = "";
+    sellerBtn.style.borderColor = "transparent";
+    stopSellerPoll();
+  }
+
+  function startSellerPoll() {
+    pollSellerFeed();
+    if (sellerPollTimer) clearInterval(sellerPollTimer);
+    sellerPollTimer = setInterval(pollSellerFeed, 2000);
+  }
+
+  function stopSellerPoll() {
+    if (sellerPollTimer) { clearInterval(sellerPollTimer); sellerPollTimer = null; }
+  }
+
+  sellerBtn.addEventListener("click", function() {
+    if (sellerVisible) hideSellerPage();
+    else showSellerPage();
+  });
+  sellerBackBtn.addEventListener("click", hideSellerPage);
+
+  document.getElementById("sellerSubmit").addEventListener("click", function() {
+    var nameEl = document.getElementById("sellerName");
+    var priceEl = document.getElementById("sellerPrice");
+    var name = (nameEl.value || "").trim();
+    var price = parseFloat(priceEl.value);
+    if (!name || isNaN(price) || price <= 0) { showToast("Enter a valid name and price"); return; }
+    var btn = document.getElementById("sellerSubmit");
+    btn.disabled = true; btn.textContent = "Listing...";
+    fetch("api/seller/add-product", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, price: price })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      showToast("Listed: " + d.name + " — watch it enrich below!");
+      nameEl.value = ""; priceEl.value = "";
+      pollSellerFeed();
+    })
+    .catch(function() { showToast("Failed to list product"); })
+    .finally(function() { btn.disabled = false; btn.textContent = "List Product"; });
+  });
+
+  function pollSellerFeed() {
+    fetch("api/seller/recent")
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var feed = document.getElementById("sellerFeed");
+        if (!feed) return;
+        var items = data.products || [];
+        if (!items.length) {
+          feed.innerHTML = '<div class="empty-results">No products added yet. List one using the form!</div>';
+          return;
+        }
+        feed.innerHTML = items.map(function(p) {
+          var enriched = p.status !== "pending_enrichment" && p.description;
+          var hasEmbed = p.has_embedding;
+
+          return '<div class="feed-card' + (enriched ? ' enriched' : '') + '">' +
+            '<div class="feed-card-top">' +
+              '<div>' +
+                '<div class="feed-card-name">' + esc(p.name) + '</div>' +
+                '<span class="feed-status ' + (enriched ? 'active' : 'pending') + '">' +
+                  (enriched ? '\u2713 Active — Searchable' : '\u25CF Enriching\u2026') +
+                '</span>' +
+              '</div>' +
+              '<div class="feed-card-price">$' + (p.price || 0).toFixed(2) + '</div>' +
+            '</div>' +
+
+            '<div class="feed-fields">' +
+              '<div class="feed-field ' + (enriched && p.description ? 'filled' : 'empty') + '">' +
+                '<div class="feed-field-label">Description (AI-generated)</div>' +
+                (enriched && p.description
+                  ? esc(p.description)
+                  : 'Waiting for Claude 4.5 Haiku\u2026') +
+              '</div>' +
+
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">' +
+                '<div class="feed-field ' + (enriched && p.category ? 'filled' : 'empty') + '">' +
+                  '<div class="feed-field-label">Category</div>' +
+                  (enriched && p.category ? esc(p.category) : 'Pending\u2026') +
+                '</div>' +
+                '<div class="feed-field ' + (enriched && p.brand ? 'filled' : 'empty') + '">' +
+                  '<div class="feed-field-label">Brand</div>' +
+                  (enriched && p.brand ? esc(p.brand) : 'Pending\u2026') +
+                '</div>' +
+              '</div>' +
+
+              '<div class="feed-field ' + (enriched && p.tags && p.tags.length ? 'filled' : 'empty') + '">' +
+                '<div class="feed-field-label">Tags</div>' +
+                (enriched && p.tags && p.tags.length
+                  ? '<div class="feed-field-tags">' + p.tags.map(function(t) { return '<span class="feed-tag">' + esc(t) + '</span>'; }).join("") + '</div>'
+                  : 'Pending\u2026') +
+              '</div>' +
+
+              '<div class="feed-field ' + (hasEmbed ? 'embedding' : 'embedding-empty') + '">' +
+                '<div class="feed-field-label">Vector Embedding (Voyage AI)</div>' +
+                (hasEmbed
+                  ? '1024 dimensions \u2014 ready for $vectorSearch'
+                  : 'Waiting for Voyage AI\u2026') +
+              '</div>' +
+            '</div>' +
+
+            (enriched
+              ? '<div class="feed-enriched-by">' +
+                  'Enriched by <span class="by-badge">Claude 4.5 Haiku</span> + <span class="by-badge">Voyage AI</span>' +
+                  (p.enriched_at ? ' \u00b7 ' + new Date(p.enriched_at).toLocaleTimeString() : '') +
+                '</div>'
+              : '') +
+          '</div>';
+        }).join("");
+      })
+      .catch(function() {});
+  }
+
+  /* ===== AI CHAT AGENT ===== */
+  var chatOpen = false;
+  chatFab.addEventListener("click", function() {
+    chatOpen = !chatOpen;
+    chatPanel.classList.toggle("open", chatOpen);
+    if (chatOpen) chatInput.focus();
+  });
+  chatClose.addEventListener("click", function() {
+    chatOpen = false;
+    chatPanel.classList.remove("open");
+  });
+
+  function appendChatMsg(cls, html) {
+    var div = document.createElement("div");
+    div.className = "chat-msg " + cls;
+    div.innerHTML = html;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return div;
+  }
+
+  function sendChat() {
+    var msg = (chatInput.value || "").trim();
+    if (!msg) return;
+    chatInput.value = "";
+    appendChatMsg("user", esc(msg));
+    chatHistory.push({ role: "user", content: msg });
+
+    chatSend.disabled = true;
+    var thinkingEl = appendChatMsg("thinking", "Thinking...");
+
+    fetch("/api/support/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: msg,
+        session_id: supportSessionId
+      })
+    })
+    .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+    .then(function(res) {
+      thinkingEl.remove();
+      if (!res.ok) {
+        appendChatMsg("assistant", esc(res.data.detail || "Support agent unavailable."));
+        return;
+      }
+      var data = res.data;
+      if (data.session_id) {
+        supportSessionId = data.session_id;
+        localStorage.setItem("leafyshop_support_session", supportSessionId);
+      }
+      if (data.trace && data.trace.length) {
+        data.trace.forEach(function(t) {
+          var label = "[step " + t.step + "] ";
+          if (t.kind === "tool_call") label += "decision: tool_call → " + (t.tool || "");
+          else if (t.kind === "tool_result") label += "tool result: " + (t.summary || "");
+          else if (t.kind === "final") label += "decision: final";
+          else label += t.kind + (t.summary ? ": " + t.summary : "");
+          appendChatMsg("tool-info", esc(label));
+        });
+      }
+      var reply = data.reply || "Sorry, I couldn't process that.";
+      appendChatMsg("assistant", reply.replace(/\n/g, "<br>"));
+    })
+    .catch(function() {
+      thinkingEl.remove();
+      appendChatMsg("assistant", "Sorry, I'm having trouble connecting. Make sure uvicorn is running and Ollama is started (ollama serve).");
+    })
+    .finally(function() { chatSend.disabled = false; });
+  }
+
+  chatSend.addEventListener("click", sendChat);
+  chatInput.addEventListener("keydown", function(e) { if (e.key === "Enter") sendChat(); });
+
+  /* ===== VIRTUAL TRY-ON ===== */
+  function openTryOn(product) {
+    tryonState = { product: product, imageBase64: null, analysis: null, generatedImage: null };
+    tryonResults.style.display = "none";
+    tryonRecommendations.style.display = "none";
+    tryonAnalyzeBtn.disabled = true;
+    tryonGenerateBtn.disabled = true;
+    tryonSaveBtn.disabled = true;
+
+    var img = getProductImage(product);
+    tryonProductInfo.innerHTML =
+      '<img src="' + img + '" alt="" onerror="this.style.display=\'none\'" />' +
+      '<div><div style="font-weight:700">' + esc(product.name) + '</div>' +
+      '<div style="font-size:0.75rem;color:var(--mongo-muted)">' + esc(product.category) + ' &middot; $' + product.price.toFixed(2) + '</div></div>';
+
+    tryonUpload.innerHTML = '<div class="tryon-upload-label"><strong>Upload Your Photo</strong>Click or drag a photo here for virtual try-on</div>';
+    tryonUpload.classList.remove("has-image");
+    tryonGenImage.innerHTML = '<div class="tryon-gen-placeholder">Click "Generate Try-On" to create a visualization</div>';
+
+    tryonOverlay.classList.add("open");
+  }
+
+  tryonClose.addEventListener("click", function() { tryonOverlay.classList.remove("open"); });
+  tryonOverlay.addEventListener("click", function(e) { if (e.target === tryonOverlay) tryonOverlay.classList.remove("open"); });
+
+  /* ========== EXPLAIN MODAL ========== */
+
+  function fetchExplainData() {
+    // Returns a Promise that resolves to the cached or freshly-fetched explain payload.
+    if (lastExplainData && lastExplainData.__query === lastQuery && lastExplainData.__mode === mode && lastExplainData.__cat === category) {
+      return Promise.resolve(lastExplainData);
+    }
+    var params = new URLSearchParams();
+    params.set("q", lastQuery);
+    params.set("mode", mode);
+    params.set("explain", "1");
+    if (category) params.set("category", category);
+    return fetch("api/search?" + params.toString())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        // tag the cached payload so we know when it's stale
+        data.__query = lastQuery; data.__mode = mode; data.__cat = category;
+        lastExplainData = data;
+        return data;
+      });
+  }
+
+  function openExplainModal() {
+    if (!lastQuery) return;
+    explainOverlay.classList.add("open");
+    explainModePill.textContent = (mode === "rerank" ? "HYBRID + RERANK" : "HYBRID (RRF)");
+    explainHeaderSub.textContent = 'Query: "' + esc(lastQuery) + '"   ·   ' + (category || "All departments");
+    explainBody.innerHTML = '<div style="text-align:center;color:var(--mongo-muted);font-size:0.85rem;padding:2rem">Loading pipeline diagnostics…</div>';
+    fetchExplainData()
+      .then(function(data) { renderExplainModal(data); })
+      .catch(function() {
+        explainBody.innerHTML = '<div style="text-align:center;color:#cc3340;padding:2rem">Failed to load pipeline diagnostics.</div>';
+      });
+  }
+
+  function openQueryModal() {
+    if (!lastQuery) return;
+    queryOverlay.classList.add("open");
+    queryHeaderSub.textContent = 'Query: "' + esc(lastQuery) + '"   ·   mode: ' + mode + '   ·   ' + (category || "All departments");
+    queryBody.innerHTML = '<div style="text-align:center;color:var(--mongo-muted);font-size:0.85rem;padding:2rem">Loading MongoDB queries…</div>';
+    fetchExplainData()
+      .then(function(data) { renderQueryModal(data); })
+      .catch(function() {
+        queryBody.innerHTML = '<div style="text-align:center;color:#cc3340;padding:2rem">Failed to load MongoDB queries.</div>';
+      });
+  }
+
+  function fmtScore(s) {
+    if (s === null || s === undefined) return '—';
+    if (typeof s !== 'number') return String(s);
+    return s >= 1 ? s.toFixed(3) : s.toFixed(4);
+  }
+
+  function fmtPipeline(pipe) {
+    if (!pipe) return '';
+    // Truncate long embedding arrays for readability
+    var clone = JSON.parse(JSON.stringify(pipe));
+    function trim(o) {
+      if (Array.isArray(o)) {
+        if (o.length > 12 && typeof o[0] === 'number') {
+          return o.slice(0, 8).concat(['…(' + (o.length - 8) + ' more dims)']);
+        }
+        return o.map(trim);
+      }
+      if (o && typeof o === 'object') {
+        var out = {};
+        Object.keys(o).forEach(function(k) { out[k] = trim(o[k]); });
+        return out;
+      }
+      return o;
+    }
+    return JSON.stringify(trim(clone), null, 2);
+  }
+
+  function stageEmbed(s) {
+    var preview = (s.embedding_preview || []).map(function(v) { return v.toFixed(4); }).join(', ');
+    return (
+      '<div class="explain-emb">' +
+        '<span class="explain-emb-label">First 8 dims:</span>[' + preview + ', …]' +
+      '</div>' +
+      '<div style="font-size:0.7rem;color:var(--mongo-muted);margin-top:0.4rem">' +
+        'Total dimensions: <strong>' + s.embedding_dims + '</strong>' +
+      '</div>'
+    );
+  }
+
+  function stageResultsTable(rows, opts) {
+    if (!rows || !rows.length) return '<div style="font-size:0.75rem;color:var(--mongo-muted)">No results.</div>';
+    opts = opts || {};
+    var scoreLabel = (rows[0] && rows[0].score_label) || 'score';
+    var html = '<table class="explain-table"><thead><tr>' +
+      '<th style="width:40px">#</th>' +
+      '<th>Document</th>' +
+      '<th style="text-align:right;width:90px">' + esc(scoreLabel) + '</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+      html += '<tr>' +
+        '<td class="rank-cell">#' + r.rank + '</td>' +
+        '<td><div class="doc-name">' + esc(r.name || '') + '</div>' +
+            '<div style="font-size:0.65rem;color:var(--mongo-muted);margin-top:1px">' + esc(r.category || '') + '</div></td>' +
+        '<td class="num">' + fmtScore(r.score) + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function fusionTable(rows, popWeight) {
+    if (!rows || !rows.length) return '';
+    // Detect whether any row has popularity contribution → show that column
+    var anyPop = rows.some(function(r) { return r.popularity; });
+    var html = '<table class="explain-table"><thead><tr>' +
+      '<th>Document</th>' +
+      '<th style="text-align:right">[A] Vector</th>' +
+      '<th style="text-align:right">[B] Text</th>' +
+      (anyPop ? '<th style="text-align:right">[C] Prior</th>' : '') +
+      '<th style="text-align:right">RRF score</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+      var v = r.vector || {};
+      var t = r.text || {};
+      var p = r.popularity || {};
+      var miss = '<span style="color:var(--mongo-muted)">— miss</span>';
+      var priorCell = '';
+      if (anyPop) {
+        priorCell = p.rank
+          ? '<td class="num">#' + p.rank + ' · ' + fmtScore(p.score) + '</td>'
+          : '<td class="num">' + miss + '</td>';
+      }
+      html += '<tr>' +
+        '<td><div class="doc-name">' + esc(r.name || '') + '</div></td>' +
+        '<td class="num">' + (v.rank ? '#' + v.rank + ' · ' + fmtScore(v.score) : miss) + '</td>' +
+        '<td class="num">' + (t.rank ? '#' + t.rank + ' · ' + fmtScore(t.score) : miss) + '</td>' +
+        priorCell +
+        '<td class="num" style="font-weight:800;color:var(--mongo-green-dark)">' + fmtScore(r.rrf_score) + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  // Render Retriever C (Prior) results — different shape than vector/text.
+  function priorTable(rows) {
+    if (!rows || !rows.length) return '<div style="font-size:0.75rem;color:var(--mongo-muted)">No prior results.</div>';
+    var html = '<table class="explain-table"><thead><tr>' +
+      '<th style="width:40px">#</th>' +
+      '<th>Document</th>' +
+      '<th style="text-align:right;width:90px">Rating</th>' +
+      '<th style="text-align:right;width:100px">Reviews</th>' +
+      '<th style="text-align:right;width:90px">Prior score</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+      html += '<tr>' +
+        '<td class="rank-cell">#' + r.rank + '</td>' +
+        '<td><div class="doc-name">' + esc(r.name || '') + '</div></td>' +
+        '<td class="num pri-rating">' + (r.rating != null ? r.rating + ' ★' : '—') + '</td>' +
+        '<td class="num">' + (r.reviews_count != null ? Number(r.reviews_count).toLocaleString() : '—') + '</td>' +
+        '<td class="num" style="font-weight:700">' + fmtScore(r.prior_score) + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  // Build the "Why is #1 ranked first?" arithmetic explainer.
+  function whyWinnerBlock(fusionRows, popWeight, k) {
+    if (!fusionRows || !fusionRows.length) return '';
+    var top = fusionRows[0];
+    var runnerUp = fusionRows[1];
+    var contribs = [];
+    var calcParts = [];
+
+    function rrfTerm(rank, weight) {
+      var c = (weight || 1) * (1 / (k + rank + 1));
+      return { c: c, label: (weight && weight !== 1 ? weight + ' × ' : '') + '1/(' + k + '+' + rank + '+1)' };
+    }
+
+    function describe(r, label) {
+      var bits = [];
+      if (r.vector && r.vector.rank) {
+        var v = rrfTerm(r.vector.rank, 1);
+        bits.push({ name: 'Vector #' + r.vector.rank, term: v });
+      }
+      if (r.text && r.text.rank) {
+        var t = rrfTerm(r.text.rank, 1);
+        bits.push({ name: 'Text #' + r.text.rank, term: t });
+      }
+      if (r.popularity && r.popularity.rank) {
+        var p = rrfTerm(r.popularity.rank, popWeight);
+        bits.push({ name: 'Prior #' + r.popularity.rank, term: p });
+      }
+      return bits;
+    }
+
+    var topBits = describe(top);
+    var topSum = topBits.reduce(function(s,b){ return s + b.term.c; }, 0);
+    var topLine = '<b>' + esc(top.name) + '</b>: ' +
+      (topBits.length ? topBits.map(function(b){ return b.name; }).join(' + ') : 'no retriever hits') +
+      '\n  = ' + topBits.map(function(b){ return b.term.label; }).join('  +  ') +
+      '\n  = ' + topSum.toFixed(4) + '  ← winning RRF score';
+
+    var html = '<div class="explain-winner">' +
+      '<h4>Why is #1 ranked first?</h4>';
+
+    if (topBits.length >= 2) {
+      html += '<div>This doc appears in <b>' + topBits.length + ' retrievers</b>. ' +
+        'In RRF, documents that show up across multiple rankers compound — even a low rank in a second retriever ' +
+        'beats a doc that only appears in one retriever.</div>';
+    } else if (topBits.length === 1) {
+      html += '<div>This doc only appears in <b>one</b> retriever, but the prior was heavily weighted ' +
+        '(' + popWeight + '×) because your query expressed clear intent.</div>';
+    }
+
+    html += '<span class="calc">' + topLine + '</span>';
+
+    if (runnerUp) {
+      var ruBits = describe(runnerUp);
+      var ruSum = ruBits.reduce(function(s,b){ return s + b.term.c; }, 0);
+      var ruLine = '<b>' + esc(runnerUp.name) + '</b>: ' +
+        (ruBits.length ? ruBits.map(function(b){ return b.name; }).join(' + ') : 'no retriever hits') +
+        '\n  = ' + ruBits.map(function(b){ return b.term.label; }).join('  +  ') +
+        '\n  = ' + ruSum.toFixed(4) + '  ← runner-up';
+      html += '<span class="calc">' + ruLine + '</span>';
+
+      if (topBits.length > ruBits.length) {
+        html += '<div style="margin-top:0.4rem">The runner-up may have stronger raw signal in a single dimension ' +
+          '(higher rating, more reviews, or closer semantic match) — but the winner gets contributions from ' +
+          '<b>more rankers</b>, and that adds up.</div>';
+      }
+    }
+
+    html += '<div style="margin-top:0.5rem;font-size:0.7rem;color:#78350f">' +
+      '<b>Want a different ranking?</b> If you just want raw ' +
+      '<code>ORDER BY reviews_count DESC</code>, that\'s a Mongo sort — not a search query. ' +
+      'Hybrid is designed to balance relevance with prior signal.' +
+      '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // Per-stage "What this does" plain-English explainer.
+  function stageHowto(s) {
+    var n = (s.name || '').toLowerCase();
+    var text = '';
+
+    if (n.indexOf('embed') === 0) {
+      text =
+        '<b>What this does:</b> Voyage AI converts your query text into a 1,024-dimensional vector — a coordinate in ' +
+        '"meaning space". Products with similar meaning have nearby coordinates.';
+    } else if (n.indexOf('retriever a') === 0) {
+      text =
+        '<b>What this does:</b> MongoDB Atlas <code>$vectorSearch</code> finds the 50 products whose ' +
+        '<code>description_embedding</code> is geometrically closest to your query vector (cosine similarity). ' +
+        'This is the <b>semantic</b> ranker — it understands meaning, but knows nothing about <code>rating</code> ' +
+        'or <code>reviews_count</code>.';
+    } else if (n.indexOf('retriever b') === 0) {
+      text =
+        '<b>What this does:</b> MongoDB Atlas <code>$search</code> runs BM25-style keyword scoring on ' +
+        '<code>name</code> and <code>description</code>, with a fuzzy clause for typos. This is the <b>lexical</b> ' +
+        'ranker — it cares about literal words, not meaning. Good for exact product names and SKUs.';
+    } else if (n.indexOf('retriever c') === 0) {
+      var intentBadge = '';
+      if (s.intent === 'reviews') {
+        intentBadge = '<span class="explain-intent-badge explain-intent-reviews">intent: reviews</span>';
+      } else if (s.intent === 'popularity') {
+        intentBadge = '<span class="explain-intent-badge explain-intent-popularity">intent: popularity</span>';
+      } else {
+        intentBadge = '<span class="explain-intent-badge explain-intent-none">intent: none</span>';
+      }
+      var formulaBit = s.prior_kind === 'reviews'
+        ? '<code>reviews_count</code> (raw)'
+        : '<code>(rating / 5) × log10(1 + reviews_count)</code>';
+      text =
+        '<b>What this does:</b> ' + intentBadge + '<br>' +
+        'A <b>numeric prior</b> ranker. Vector + text search can\'t reason about rating or review count — they only ' +
+        'see words and embeddings. This retriever fixes that by sorting the candidate pool by ' + formulaBit + '. ' +
+        'When your query contains words like "popular", "top rated", or "most reviewed", we also <b>inject</b> the ' +
+        'globally best-scoring docs from the whole collection (' + (s.weight || 1) + '× weight in RRF) — that\'s ' +
+        'why <i>obvious</i> winners show up even if they don\'t match semantically.';
+    } else if (n.indexOf('fusion') === 0 || s.fusion_rows) {
+      text =
+        '<b>What this does:</b> <b>Reciprocal Rank Fusion (RRF)</b> combines the three retrievers into one score. ' +
+        'For each document, sum <code>weight / (k + rank + 1)</code> across the rankers it appears in (k = ' + (s.rrf_k || 60) + '). ' +
+        'Docs that appear in <b>multiple retrievers</b> add up to higher scores — that\'s the whole point of hybrid search.';
+    } else if (n.indexOf('rerank') === 0 || s.rerank_rows) {
+      text =
+        '<b>What this does:</b> The Voyage cross-encoder reads your query and each candidate document <b>together</b> ' +
+        'and produces a true relevance score. This is more expensive than RRF but much more accurate for the top-K ' +
+        'where it matters most.';
+    }
+    if (!text) return '';
+    return '<div class="explain-howto">' + text + '</div>';
+  }
+
+  // The top intro block — mental model + small ASCII architecture.
+  function introBlock(data) {
+    var stageCount = (data.explain && data.explain.stages || []).length;
+    var hasFusion = (data.explain && data.explain.stages || []).some(function(s){ return s.fusion_rows; });
+    var hasPrior = (data.explain && data.explain.stages || []).some(function(s){ return s.intent != null; });
+
+    var html = '<div class="explain-intro">' +
+      '<h3>How hybrid search ranks results</h3>' +
+      '<p>This page runs <b>' + (hasFusion ? (hasPrior ? '3' : '2') : '1') + ' independent rankers</b> against the same ' +
+      'MongoDB collection, then combines them with <b>Reciprocal Rank Fusion (RRF)</b>. Each ranker has a different ' +
+      'opinion — RRF rewards documents that multiple rankers agree on.</p>';
+
+    if (hasFusion) {
+      html += '<pre class="explain-archi">' +
+'           MongoDB Atlas collection (workshop.products)\n' +
+'                          │\n' +
+'         ┌────────────────┼────────────────┐\n' +
+'         ▼                ▼                ▼\n' +
+'   [A] $vectorSearch  [B] $search    [C] Prior (NEW)\n' +
+'   semantic meaning   literal words  rating × log(reviews)\n' +
+'   cosine similarity  BM25 + fuzzy   or raw reviews_count\n' +
+'         │                │                │\n' +
+'         └────────┬───────┴────────┬───────┘\n' +
+'                  ▼                ▼\n' +
+'        RRF: score = Σᵣ weightᵣ / (k + rankᵣ + 1)\n' +
+'                          │\n' +
+'                          ▼\n' +
+'                  Final ranked results' +
+        '</pre>';
+    }
+
+    if (hasPrior) {
+      html += '<p style="margin-top:0.6rem"><b>Intent detection:</b> when your query contains words like ' +
+        '<code>popular</code>, <code>top rated</code>, or <code>most reviewed</code>, ' +
+        'Retriever C boosts its weight (1× → 4×) <i>and</i> pulls the globally top-scoring docs into the candidate ' +
+        'pool. That\'s why "most reviewed product" surfaces actual high-review items, not just docs whose ' +
+        'descriptions <i>contain</i> the word "reviewed".</p>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function rerankTable(rows) {
+    if (!rows || !rows.length) return '';
+    var html = '<table class="explain-table"><thead><tr>' +
+      '<th>Document</th>' +
+      '<th style="text-align:center">Before (RRF)</th>' +
+      '<th style="text-align:center">After (Rerank)</th>' +
+      '<th style="text-align:right">Rerank score</th>' +
+      '<th style="text-align:center">Δ</th>' +
+      '</tr></thead><tbody>';
+    rows.forEach(function(r) {
+      var moveCls = r.moved > 0 ? 'moved-up' : (r.moved < 0 ? 'moved-down' : 'moved-same');
+      var moveText = r.moved > 0 ? '↑' + r.moved : (r.moved < 0 ? '↓' + Math.abs(r.moved) : '=');
+      html += '<tr>' +
+        '<td><div class="doc-name">' + esc(r.name || '') + '</div></td>' +
+        '<td class="num" style="text-align:center">#' + r.rrf_rank + '</td>' +
+        '<td class="num" style="text-align:center;font-weight:700;color:var(--mongo-green-dark)">#' + r.rerank_rank + '</td>' +
+        '<td class="num">' + fmtScore(r.rerank_score) + '</td>' +
+        '<td class="num ' + moveCls + '" style="text-align:center">' + moveText + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function buildPipelineToggle(pipelineJson, idSuffix) {
+    var id = 'explain-pipe-' + idSuffix;
+    return (
+      '<button class="explain-toggle" data-target="' + id + '">▸ Show MongoDB pipeline</button>' +
+      '<pre class="explain-pre explain-collapsed" id="' + id + '">' + esc(pipelineJson) + '</pre>'
+    );
+  }
+
+  // ────────────────── MongoDB Query Inspector ──────────────────
+  // Pretty-print JSON with minimal syntax highlighting (keys / strings / numbers).
+  function syntaxHighlightJSON(obj) {
+    var json = JSON.stringify(obj, null, 2);
+    if (!json) return '';
+    // escape HTML in case any string contains < > &
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      function (match) {
+        var cls = 'num';
+        if (/^"/.test(match)) {
+          cls = /:$/.test(match) ? 'key' : 'str';
+        } else if (/true|false/.test(match)) {
+          cls = 'num';
+        } else if (/null/.test(match)) {
+          cls = 'punct';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+      }
+    );
+  }
+
+  // Copy a string to the clipboard, fall back to a textarea for older browsers.
+  function copyToClipboard(text, btn) {
+    function flash() {
+      if (!btn) return;
+      var orig = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '<span>✓ Copied</span>';
+      setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = orig; }, 1400);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(flash, function() {
+        fallbackCopy(text); flash();
+      });
+    } else {
+      fallbackCopy(text); flash();
+    }
+  }
+  function fallbackCopy(text) {
+    var t = document.createElement('textarea');
+    t.value = text; t.style.position = 'fixed'; t.style.top = '-2000px';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(t);
+  }
+
+  // Render a section for one retriever with tabs (JSON pipeline + shell + python).
+  function queryCodeSection(opts) {
+    // opts: { id, tag (vec|txt|pri|rrk), title, meta (rows), tabs: [{key,label,text,language}] }
+    var html = '<div class="query-section">';
+    html += '<div class="query-section-head">' +
+      '<span class="query-section-title">' +
+      (opts.tag ? '<span class="query-section-tag ' + opts.tag + '">' + opts.tagLabel + '</span>' : '') +
+      esc(opts.title) +
+      '</span>' +
+      '</div>';
+    if (opts.meta && opts.meta.length) {
+      var metaHtml = '<div class="query-meta">';
+      opts.meta.forEach(function(m) {
+        metaHtml += '<div class="meta-row"><span class="meta-k">' + esc(m.k) + '</span> ' + m.v + '</div>';
+      });
+      metaHtml += '</div>';
+      html += metaHtml;
+    }
+    if (opts.tabs && opts.tabs.length) {
+      html += '<div class="query-tabs">';
+      opts.tabs.forEach(function(t, i) {
+        html += '<button class="query-tab' + (i === 0 ? ' active' : '') + '" data-tabparent="' + opts.id + '" data-tabkey="' + t.key + '">' + esc(t.label) + '</button>';
+      });
+      html += '</div>';
+      opts.tabs.forEach(function(t, i) {
+        var paneId = opts.id + '-' + t.key;
+        var content = t.language === 'json'
+          ? syntaxHighlightJSON(t.text)
+          : esc(t.text);
+        html += '<div class="query-tab-panel' + (i === 0 ? ' active' : '') + '" id="' + paneId + '">' +
+          '<div style="position:relative">' +
+          '<div style="position:absolute;top:8px;right:10px;z-index:1">' +
+          '<button class="query-copy" data-copy="' + paneId + '-text"><span>Copy</span></button>' +
+          '</div>' +
+          '<pre class="query-pre' + (t.language === 'bash' ? ' bash' : '') + '" id="' + paneId + '-text" data-rawtext="' + esc(typeof t.text === 'string' ? t.text : JSON.stringify(t.text, null, 2)) + '">' +
+          content +
+          '</pre></div></div>';
+      });
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function intentCard(priorStage) {
+    if (!priorStage) return '';
+    var intent = priorStage.intent || 'none';
+    var im = priorStage.intent_match || {};
+    var pillCls = intent === 'reviews' ? 'qi-reviews' : (intent === 'popularity' ? 'qi-popularity' : 'qi-none');
+    var summary = '';
+    if (intent === 'reviews') {
+      summary = 'You used a word that signals <b>review-count intent</b>. The backend boosts Retriever C\'s weight to ' +
+        '<b>' + (priorStage.weight || 1) + '×</b> and injects the globally <b>most-reviewed</b> products into the candidate pool.';
+    } else if (intent === 'popularity') {
+      summary = 'You used a word that signals <b>popularity / rating intent</b>. The backend boosts Retriever C\'s weight to ' +
+        '<b>' + (priorStage.weight || 1) + '×</b> and injects the globally <b>highest-rated</b> products into the candidate pool.';
+    } else {
+      summary = 'No popularity/review intent detected. Retriever C runs only as a mild tiebreaker over the existing candidate pool — no global pool injection.';
+    }
+
+    var html = '<div class="query-intent-card">';
+    html += '<h4>Intent detection</h4>';
+    html += '<div style="margin-bottom:0.4rem">' +
+      '<span class="query-intent-pill ' + pillCls + '">intent: ' + intent + '</span>' +
+      (priorStage.prior_kind ? '<span class="query-intent-pill qi-none">prior: ' + priorStage.prior_kind + '</span>' : '') +
+      (priorStage.weight ? '<span class="query-intent-pill qi-none">weight: ' + priorStage.weight + '×</span>' : '') +
+      '</div>';
+    html += '<div>' + summary + '</div>';
+
+    if (im && (im.reviews_pattern || im.popularity_pattern)) {
+      html += '<div style="margin-top:0.55rem;padding-top:0.5rem;border-top:1px dashed var(--mongo-border);font-size:0.7rem;line-height:1.55">' +
+        '<b style="color:var(--mongo-green-dark)">Regexes that classified your query:</b>';
+      if (im.reviews_pattern) {
+        html += '<div style="margin-top:0.25rem"><code>' + esc(im.reviews_pattern) + '</code> &nbsp;→&nbsp; ' +
+          (im.reviews_match ? '<b style="color:#4c1d95">match: "' + esc(im.reviews_match) + '"</b>' : '<span style="color:var(--mongo-muted)">no match</span>') +
+          '</div>';
+      }
+      if (im.popularity_pattern) {
+        html += '<div style="margin-top:0.25rem"><code>' + esc(im.popularity_pattern) + '</code> &nbsp;→&nbsp; ' +
+          (im.popularity_match ? '<b style="color:#78350f">match: "' + esc(im.popularity_match) + '"</b>' : '<span style="color:var(--mongo-muted)">no match</span>') +
+          '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderQueryModal(data) {
+    if (!data || !data.explain || !data.explain.stages) {
+      queryBody.innerHTML = '<div style="padding:2rem;color:var(--mongo-muted);text-align:center">No query data returned.</div>';
+      return;
+    }
+    var stages = data.explain.stages;
+    var html = '';
+
+    // Intro
+    html += '<div class="query-intro">' +
+      '<b>What you\'re looking at:</b> the exact MongoDB operations the backend ran for your query <code>' + esc(data.query) + '</code> ' +
+      '(mode <b>' + esc(data.mode) + '</b>). You can copy any of these snippets directly into <b>MongoDB Compass</b>, the <b>Atlas Aggregation Pipeline Builder</b>, ' +
+      'or paste them into a notebook to verify what the application actually did.' +
+      '</div>';
+
+    // Find the relevant stages
+    var vectorStage = null, textStage = null, priorStage = null, rerankStage = null;
+    stages.forEach(function(s) {
+      var n = (s.name || '').toLowerCase();
+      if (n.indexOf('retriever a') === 0) vectorStage = s;
+      else if (n.indexOf('retriever b') === 0) textStage = s;
+      else if (n.indexOf('retriever c') === 0) priorStage = s;
+      else if (n.indexOf('voyage rerank') >= 0 || s.rerank_rows) rerankStage = s;
+    });
+
+    // 1) Intent card (always show — explains the whole shape of the query)
+    if (priorStage) {
+      html += intentCard(priorStage);
+    }
+
+    // 2) Vector pipeline
+    if (vectorStage && vectorStage.pipeline) {
+      var vecMeta = [
+        { k: 'index',      v: '<code>vector_index</code>' },
+        { k: 'collection', v: '<code>workshop.products</code>' },
+        { k: 'operation',  v: '<code>db.products.aggregate( [...] )</code>' },
+        { k: 'candidates', v: 'top <b>50</b> by cosine similarity (then trimmed to <b>limit</b> by RRF)' },
+      ];
+      html += queryCodeSection({
+        id: 'q-vec',
+        tag: 'vec',
+        tagLabel: '[A] $vectorSearch',
+        title: 'Vector Search — semantic',
+        meta: vecMeta,
+        tabs: [
+          {
+            key: 'json',
+            label: 'Aggregation pipeline (JSON)',
+            text: vectorStage.pipeline,
+            language: 'json'
+          },
+          {
+            key: 'shell',
+            label: 'mongosh',
+            text:
+'db.products.aggregate(\n' +
+JSON.stringify(_truncatePipeline(vectorStage.pipeline), null, 2) +
+'\n)',
+            language: 'bash'
+          }
+        ]
+      });
+    }
+
+    // 3) Text pipeline
+    if (textStage && textStage.pipeline) {
+      var txtMeta = [
+        { k: 'index',      v: '<code>text_search_index</code>' },
+        { k: 'collection', v: '<code>workshop.products</code>' },
+        { k: 'operation',  v: '<code>db.products.aggregate( [...] )</code>' },
+        { k: 'scoring',    v: 'BM25-like, with a boosted exact clause and a fuzzy fallback (maxEdits=' + (textStage.fuzzy && textStage.fuzzy.maxEdits) + ')' },
+      ];
+      html += queryCodeSection({
+        id: 'q-txt',
+        tag: 'txt',
+        tagLabel: '[B] $search',
+        title: 'Text Search — lexical (BM25 + fuzzy)',
+        meta: txtMeta,
+        tabs: [
+          {
+            key: 'json',
+            label: 'Aggregation pipeline (JSON)',
+            text: textStage.pipeline,
+            language: 'json'
+          },
+          {
+            key: 'shell',
+            label: 'mongosh',
+            text:
+'db.products.aggregate(\n' +
+JSON.stringify(textStage.pipeline, null, 2) +
+'\n)',
+            language: 'bash'
+          }
+        ]
+      });
+    }
+
+    // 4) Prior (find/sort/limit)
+    if (priorStage) {
+      var qs = priorStage.query_spec || {};
+      var priorMeta = [
+        { k: 'collection', v: '<code>workshop.products</code>' },
+        { k: 'operation',  v: '<code>' + esc(qs.operation || 'find().sort().limit()') + '</code>' },
+        { k: 'sort',       v: '<code>' + esc(JSON.stringify(qs.sort || {})) + '</code>' },
+        { k: 'limit',      v: '<code>' + (qs.limit != null ? qs.limit : '—') + '</code>' },
+      ];
+      if (qs.intent === 'none') {
+        priorMeta.push({ k: 'note', v: '<i style="color:var(--mongo-muted)">No intent detected — no global pool injection. Retriever C re-ranks the existing vector+text candidates only (no extra MongoDB round-trip).</i>' });
+      }
+      var tabs = [];
+      if (qs.intent !== 'none') {
+        tabs.push({
+          key: 'json',
+          label: 'Equivalent Atlas pipeline',
+          text: [
+            { '$match': qs.filter || {} },
+            { '$project': qs.projection || {} },
+            { '$sort': qs.sort || {} },
+            { '$limit': qs.limit || 0 }
+          ],
+          language: 'json'
+        });
+        tabs.push({
+          key: 'shell',
+          label: 'mongosh',
+          text: qs.shell || '',
+          language: 'bash'
+        });
+        tabs.push({
+          key: 'py',
+          label: 'pymongo',
+          text: qs.pymongo || '',
+          language: 'bash'
+        });
+      } else {
+        tabs.push({
+          key: 'note',
+          label: 'No query executed',
+          text: '# Retriever C only re-ranks the in-memory candidate pool.\n# No extra MongoDB round-trip is performed when intent=none.\n# The prior score for each candidate is:\n#   (rating / 5) * log10(1 + reviews_count)',
+          language: 'bash'
+        });
+      }
+      html += queryCodeSection({
+        id: 'q-pri',
+        tag: 'pri',
+        tagLabel: '[C] Prior',
+        title: 'Prior (rating / reviews) — find().sort()',
+        meta: priorMeta,
+        tabs: tabs
+      });
+    }
+
+    // 5) Tip footer
+    html += '<div class="query-tip">' +
+      '<b>How to verify:</b> Open MongoDB Compass → connect with your Atlas connection string → ' +
+      'navigate to <code>workshop.products</code> → click <b>Aggregations</b> → paste any pipeline above. ' +
+      'You\'ll see identical results to what this app received. ' +
+      '<br><br>' +
+      '<b>What you won\'t see in MongoDB:</b> the RRF fusion step happens in Python ' +
+      '(<code>backend/app.py:hybrid_search</code>) — MongoDB only returns the per-retriever ranked lists.' +
+      '</div>';
+
+    queryBody.innerHTML = html;
+
+    // Wire tab switching
+    queryBody.querySelectorAll('.query-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var parent = btn.getAttribute('data-tabparent');
+        var key = btn.getAttribute('data-tabkey');
+        queryBody.querySelectorAll('.query-tab[data-tabparent="' + parent + '"]').forEach(function(b) { b.classList.remove('active'); });
+        queryBody.querySelectorAll('[id^="' + parent + '-"]').forEach(function(p) {
+          if (p.classList.contains('query-tab-panel')) p.classList.remove('active');
+        });
+        btn.classList.add('active');
+        var pane = document.getElementById(parent + '-' + key);
+        if (pane) pane.classList.add('active');
+      });
+    });
+
+    // Wire copy buttons
+    queryBody.querySelectorAll('.query-copy').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var targetId = btn.getAttribute('data-copy');
+        var node = document.getElementById(targetId);
+        var raw = node && node.getAttribute('data-rawtext');
+        if (raw == null && node) raw = node.textContent;
+        if (raw == null) raw = '';
+        copyToClipboard(raw, btn);
+      });
+    });
+  }
+
+  // Defensive copy of a pipeline that trims any 1024-dim embedding array
+  // for the shell snippet (mongosh users won't paste a 1024-element vector anyway).
+  function _truncatePipeline(pipe) {
+    if (!pipe) return pipe;
+    var clone = JSON.parse(JSON.stringify(pipe));
+    function visit(o) {
+      if (Array.isArray(o)) {
+        if (o.length > 50 && typeof o[0] === 'number') {
+          return ['/* 1024-dim embedding vector — replace with: voyageai.embed(query).embeddings[0] */'];
+        }
+        return o.map(visit);
+      }
+      if (o && typeof o === 'object') {
+        var out = {};
+        Object.keys(o).forEach(function(k) { out[k] = visit(o[k]); });
+        return out;
+      }
+      return o;
+    }
+    return visit(clone);
+  }
+
+  function renderExplainModal(data) {
+    if (!data || !data.explain || !data.explain.stages) {
+      explainBody.innerHTML = '<div style="padding:2rem;color:var(--mongo-muted);text-align:center">No pipeline data returned.</div>';
+      return;
+    }
+    var stages = data.explain.stages;
+    var html = '';
+
+    // 1) Mental-model intro block (architecture diagram + intent explainer)
+    html += introBlock(data);
+
+    // 2) Per-query summary line
+    html += '<div style="padding:0.55rem 0.8rem;background:var(--mongo-mist);border-radius:8px;margin-bottom:1rem;font-size:0.75rem;color:var(--mongo-text);line-height:1.5">' +
+      'Pipeline trace for query <code style="background:#fff;padding:1px 5px;border-radius:3px">' + esc(data.query) + '</code> ' +
+      '· <b>' + (data.results || []).length + ' results</b> ' +
+      '· mode <b>' + esc(data.mode || 'hybrid') + '</b>' +
+      '</div>';
+
+    // Find the popularity weight to pass to whyWinnerBlock
+    var fusionStage = null;
+    stages.forEach(function(s) { if (s.fusion_rows) fusionStage = s; });
+    var popWeight = fusionStage && fusionStage.popularity_weight != null ? fusionStage.popularity_weight : 1;
+    var rrfK = fusionStage && fusionStage.rrf_k != null ? fusionStage.rrf_k : 60;
+
+    stages.forEach(function(s, idx) {
+      var nameLower = (s.name || '').toLowerCase();
+      var isPriorStage = nameLower.indexOf('retriever c') === 0;
+
+      html += '<div class="explain-stage">';
+      html += '<div class="explain-stage-head">' +
+        '<span class="explain-stage-num">' + (idx + 1) + '</span>' +
+        '<span class="explain-stage-title">' + esc(s.name) + '</span>' +
+        '</div>';
+      if (s.detail) {
+        html += '<div class="explain-stage-detail">' + esc(s.detail) + '</div>';
+      }
+      html += '<div class="explain-stage-body">';
+
+      // "What this does" plain-English explainer for every stage
+      html += stageHowto(s);
+
+      if (s.embedding_preview) {
+        html += stageEmbed(s);
+      }
+
+      // Results table — route Prior to its own renderer (has rating/reviews columns)
+      if (s.results) {
+        if (isPriorStage) {
+          html += priorTable(s.results);
+        } else {
+          html += stageResultsTable(s.results);
+        }
+      }
+
+      if (s.fusion_rows) {
+        html += '<div class="explain-formula">' +
+          'score = Σᵣ weight<sub>r</sub> / (k + rank<sub>r</sub> + 1)  ·  k = ' + s.rrf_k +
+          (s.popularity_weight != null ? '  ·  prior weight = ' + s.popularity_weight : '') +
+          '</div>';
+        html += '<div style="font-size:0.7rem;color:var(--mongo-muted);margin-top:0.5rem;line-height:1.5">' +
+          'A document that appears in <b>multiple retrievers</b> gets contributions from each — that\'s how a doc ' +
+          'with weaker individual signal can still win, by appearing in two or three lists. ' +
+          '"— miss" means the retriever did not return this doc in its top ' + (s.rrf_k ? '50' : 'candidates') + '.' +
+          '</div>';
+        html += fusionTable(s.fusion_rows, s.popularity_weight);
+
+        // Concrete "Why is #1 ranked first?" arithmetic walkthrough
+        html += whyWinnerBlock(s.fusion_rows, popWeight, rrfK);
+      }
+
+      if (s.rerank_rows) {
+        html += '<div class="explain-callout">' +
+          '<b>Why rerank?</b> RRF only knows about ranks. The Voyage <code>' + esc(s.rerank_model) + '</code> cross-encoder ' +
+          'reads the query and each document <i>together</i> and scores their semantic relevance. This often reorders the list — ' +
+          'watch for results that jump up several places (▲).' +
+          '</div>';
+        html += rerankTable(s.rerank_rows);
+      }
+
+      if (s.pipeline) {
+        html += buildPipelineToggle(fmtPipeline(s.pipeline), idx);
+      }
+
+      html += '</div>'; // body
+      html += '</div>'; // stage
+    });
+
+    explainBody.innerHTML = html;
+
+    // Wire up collapse toggles
+    explainBody.querySelectorAll('.explain-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var target = document.getElementById(btn.getAttribute('data-target'));
+        if (!target) return;
+        var collapsed = target.classList.toggle('explain-collapsed');
+        btn.textContent = (collapsed ? '▸ Show ' : '▾ Hide ') + 'MongoDB pipeline';
+      });
+    });
+  }
+
+  if (explainBtnInline) explainBtnInline.addEventListener('click', openExplainModal);
+  explainClose.addEventListener('click', function() { explainOverlay.classList.remove('open'); });
+  explainOverlay.addEventListener('click', function(e) { if (e.target === explainOverlay) explainOverlay.classList.remove('open'); });
+
+  if (queryBtnInline) queryBtnInline.addEventListener('click', openQueryModal);
+  if (queryClose)     queryClose.addEventListener('click', function() { queryOverlay.classList.remove('open'); });
+  if (queryOverlay)   queryOverlay.addEventListener('click', function(e) { if (e.target === queryOverlay) queryOverlay.classList.remove('open'); });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (explainOverlay.classList.contains('open')) explainOverlay.classList.remove('open');
+      if (queryOverlay && queryOverlay.classList.contains('open')) queryOverlay.classList.remove('open');
+    }
+  });
+
+  /* ========== IMAGE SEARCH (multimodal) ========== */
+  var cameraBtn = document.getElementById('cameraBtn');
+  var imgsearchOverlay = document.getElementById('imgsearchOverlay');
+  var imgsearchClose = document.getElementById('imgsearchClose');
+  var imgsearchDrop = document.getElementById('imgsearchDrop');
+  var imgsearchFile = document.getElementById('imgsearchFile');
+  var imgsearchText = document.getElementById('imgsearchText');
+  var imgsearchGoBtn = document.getElementById('imgsearchGoBtn');
+  var imgsearchClearBtn = document.getElementById('imgsearchClearBtn');
+  var imgsearchMeta = document.getElementById('imgsearchMeta');
+  var imgsearchBanner = document.getElementById('imgsearchBanner');
+  var imgsearchBannerImg = document.getElementById('imgsearchBannerImg');
+  var imgsearchBannerSub = document.getElementById('imgsearchBannerSub');
+  var imgsearchBannerClear = document.getElementById('imgsearchBannerClear');
+
+  var imgsearchState = { file: null, dataUrl: null };
+
+  function imgsearchReset() {
+    imgsearchState.file = null;
+    imgsearchState.dataUrl = null;
+    imgsearchDrop.classList.remove('has-image');
+    imgsearchDrop.innerHTML =
+      '<div class="imgsearch-drop-icon">📷</div>' +
+      '<div class="imgsearch-drop-label">' +
+        '<strong>Click or drag a photo here</strong>' +
+        'JPEG / PNG / WebP up to 10&nbsp;MB' +
+      '</div>';
+    imgsearchFile.value = '';
+    imgsearchMeta.textContent = '';
+    imgsearchGoBtn.disabled = true;
+  }
+
+  function loadImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      showToast('Please choose an image file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image too large. Limit is 10MB.');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      imgsearchState.file = file;
+      imgsearchState.dataUrl = ev.target.result;
+      imgsearchDrop.innerHTML = '<img src="' + ev.target.result + '" alt="Selected photo" />';
+      imgsearchDrop.classList.add('has-image');
+      imgsearchMeta.textContent = file.name + ' · ' + Math.round(file.size / 1024) + ' KB';
+      imgsearchGoBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  cameraBtn.addEventListener('click', function() {
+    imgsearchOverlay.classList.add('open');
+  });
+  imgsearchClose.addEventListener('click', function() { imgsearchOverlay.classList.remove('open'); });
+  imgsearchOverlay.addEventListener('click', function(e) { if (e.target === imgsearchOverlay) imgsearchOverlay.classList.remove('open'); });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && imgsearchOverlay.classList.contains('open')) {
+      imgsearchOverlay.classList.remove('open');
+    }
+  });
+
+  imgsearchDrop.addEventListener('click', function() { imgsearchFile.click(); });
+  imgsearchFile.addEventListener('change', function() { loadImageFile(imgsearchFile.files[0]); });
+  imgsearchDrop.addEventListener('dragover', function(e) {
+    e.preventDefault(); imgsearchDrop.classList.add('dragging');
+  });
+  imgsearchDrop.addEventListener('dragleave', function() { imgsearchDrop.classList.remove('dragging'); });
+  imgsearchDrop.addEventListener('drop', function(e) {
+    e.preventDefault(); imgsearchDrop.classList.remove('dragging');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      loadImageFile(e.dataTransfer.files[0]);
+    }
+  });
+  imgsearchClearBtn.addEventListener('click', imgsearchReset);
+
+  function clearImageSearchBanner() {
+    imgsearchBanner.style.display = 'none';
+    imgsearchBannerImg.src = '';
+    imgsearchBannerSub.textContent = '';
+  }
+  imgsearchBannerClear.addEventListener('click', function() {
+    clearImageSearchBanner();
+    resultsEl.innerHTML = '<div class="empty-results">Start typing to search across products using MongoDB Atlas Vector Search</div>';
+    resultsCount.innerHTML = 'Search for products to get started';
+    lastQuery = '';
+    setExplainEnabled(false);
+  });
+
+  imgsearchGoBtn.addEventListener('click', function() {
+    if (!imgsearchState.file) return;
+    var refinement = (imgsearchText.value || '').trim();
+
+    var fd = new FormData();
+    fd.append('image', imgsearchState.file);
+    if (refinement) fd.append('q', refinement);
+    if (category) fd.append('category', category);
+    fd.append('limit', '12');
+
+    imgsearchGoBtn.disabled = true;
+    imgsearchGoBtn.textContent = 'Embedding & searching…';
+    setLoading(true);
+
+    fetch('api/search/image', { method: 'POST', body: fd })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || 'Image search failed'); });
+        return r.json();
+      })
+      .then(function(data) {
+        // Render in the main grid using the existing renderer
+        renderResults({ query: refinement || '(image)', mode: 'multimodal', results: data.results || [] });
+        // Show the banner with the query thumbnail
+        imgsearchBanner.style.display = 'flex';
+        imgsearchBannerImg.src = imgsearchState.dataUrl;
+        var subParts = [
+          (data.results || []).length + ' matches via ' + (data.model || 'voyage-multimodal'),
+          'image ' + (data.image_resized_to ? data.image_resized_to.join('×') : ''),
+        ];
+        if (refinement) subParts.push('refinement: "' + esc(refinement) + '"');
+        imgsearchBannerSub.innerHTML = subParts.join(' &middot; ');
+        // Image search doesn't support the explain modal (different pipeline shape)
+        setExplainEnabled(false);
+        lastQuery = '';
+        // Close the upload modal
+        imgsearchOverlay.classList.remove('open');
+      })
+      .catch(function(err) {
+        showToast(String(err.message || err));
+      })
+      .finally(function() {
+        imgsearchGoBtn.disabled = !imgsearchState.file;
+        imgsearchGoBtn.textContent = 'Find similar products';
+        setLoading(false);
+      });
+  });
+
+  tryonUpload.addEventListener("click", function() { tryonFileInput.click(); });
+  tryonFileInput.addEventListener("change", function() {
+    var file = tryonFileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      tryonState.imageBase64 = ev.target.result.split(",")[1];
+      tryonUpload.innerHTML = '<img src="' + ev.target.result + '" alt="Your photo" />';
+      tryonUpload.classList.add("has-image");
+      tryonAnalyzeBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  tryonAnalyzeBtn.addEventListener("click", function() {
+    if (!tryonState.imageBase64 || !tryonState.product) return;
+    tryonAnalyzeBtn.disabled = true;
+    tryonAnalyzeBtn.textContent = "Analyzing...";
+    tryonResults.style.display = "block";
+    tryonAnalysis.textContent = "Running style analysis with Claude Vision...";
+    tryonScoreArea.innerHTML = "";
+
+    fetch(BEDROCK_API + "/leafy_tryon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "analyze",
+        image_base64: tryonState.imageBase64,
+        product: {
+          name: tryonState.product.name,
+          description: tryonState.product.description || "",
+          category: tryonState.product.category || ""
+        }
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      tryonState.analysis = data;
+      var score = data.compatibility_score || data.score || "?";
+      tryonScoreArea.innerHTML = '<div class="tryon-score">Compatibility: ' + score + '/10</div>';
+      var text = "";
+      if (data.fit_recommendation) text += "Fit: " + data.fit_recommendation + "\n\n";
+      if (data.color_matching) text += "Colors: " + data.color_matching + "\n\n";
+      if (data.styling_tips) text += "Styling Tips: " + data.styling_tips + "\n\n";
+      if (data.body_type_analysis) text += "Body Type: " + data.body_type_analysis;
+      tryonAnalysis.textContent = text || JSON.stringify(data, null, 2);
+      tryonGenerateBtn.disabled = false;
+    })
+    .catch(function() {
+      tryonAnalysis.textContent = "Analysis failed. Make sure the Try-On Lambda is deployed.";
+    })
+    .finally(function() {
+      tryonAnalyzeBtn.textContent = "Analyze Style";
+      tryonAnalyzeBtn.disabled = false;
+    });
+  });
+
+  tryonGenerateBtn.addEventListener("click", function() {
+    if (!tryonState.product) return;
+    tryonGenerateBtn.disabled = true;
+    tryonGenerateBtn.textContent = "Generating...";
+    tryonGenImage.innerHTML = '<div class="tryon-gen-placeholder">Generating try-on image with Nova Canvas...</div>';
+
+    var desc = tryonState.product.description || tryonState.product.name;
+    var styleCtx = tryonState.analysis ? (tryonState.analysis.fit_recommendation || "") : "";
+
+    fetch(BEDROCK_API + "/leafy_tryon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "generate",
+        prompt: "A person wearing " + desc + ", studio photo, fashion lookbook style, professional lighting",
+        style_context: styleCtx
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.image_base64) {
+        tryonState.generatedImage = data.image_base64;
+        tryonGenImage.innerHTML = '<img src="data:image/png;base64,' + data.image_base64 + '" alt="Try-on result" />';
+        tryonSaveBtn.disabled = false;
+      } else {
+        tryonGenImage.innerHTML = '<div class="tryon-gen-placeholder">Image generation failed. ' + (data.error || "") + '</div>';
+      }
+    })
+    .catch(function() {
+      tryonGenImage.innerHTML = '<div class="tryon-gen-placeholder">Generation failed. Make sure the Try-On Lambda is deployed.</div>';
+    })
+    .finally(function() {
+      tryonGenerateBtn.textContent = "Generate Try-On";
+      tryonGenerateBtn.disabled = false;
+    });
+  });
+
+  tryonSaveBtn.addEventListener("click", function() {
+    if (!tryonState.analysis) return;
+    tryonSaveBtn.disabled = true;
+    tryonSaveBtn.textContent = "Saving...";
+
+    fetch(BEDROCK_API + "/leafy_tryon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "save",
+        product_id: tryonState.product.id || "",
+        analysis: tryonState.analysis,
+        generated_image_base64: tryonState.generatedImage || "",
+        user_preferences: []
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      showToast("Try-on session saved!");
+      if (data.session_id) {
+        fetch(BEDROCK_API + "/leafy_tryon", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "recommend", session_id: data.session_id })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(recData) {
+          var recs = recData.recommendations || [];
+          if (recs.length) {
+            tryonRecommendations.style.display = "block";
+            tryonRecommendations.innerHTML = '<h3 style="font-size:0.9375rem;font-weight:800;color:var(--mongo-green-dark);margin:1rem 0 0.5rem">Recommended for Your Style</h3>' +
+              '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.5rem">' +
+              recs.map(function(r) {
+                return '<div style="border:1px solid var(--mongo-border);border-radius:8px;padding:0.5rem;font-size:0.8125rem">' +
+                  '<div style="font-weight:700">' + esc(r.name) + '</div>' +
+                  '<div style="color:var(--mongo-muted)">' + esc(r.category || "") + ' &middot; $' + (r.price || 0).toFixed(2) + '</div>' +
+                '</div>';
+              }).join("") +
+              '</div>';
+          }
+        })
+        .catch(function() {});
+      }
+    })
+    .catch(function() { showToast("Failed to save session"); })
+    .finally(function() { tryonSaveBtn.textContent = "Save & Recommend"; tryonSaveBtn.disabled = false; });
+  });
+
+  saveCart();
+  loadBrowse("");   // populate the storefront with featured listings on page load
+})();
+</script>
+</body>
+</html>
