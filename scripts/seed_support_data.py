@@ -92,9 +92,10 @@ def main() -> None:
   kb.insert_many([{**doc, "created_at": now} for doc in KNOWLEDGE_DOCS])
 
   memories.create_index([("session_id", ASCENDING), ("created_at", ASCENDING)])
+  memories.create_index([("user_id", ASCENDING), ("memory_scope", ASCENDING), ("created_at", ASCENDING)])
 
   print(f"Seeded {len(KNOWLEDGE_DOCS)} knowledge_base documents into workshop.knowledge_base")
-  print("memories collection ready (starts empty; agent writes per session)")
+  print("memories collection ready (session + long-term; run seed_user_profile.py for demo_user)")
 
 
 if __name__ == "__main__":

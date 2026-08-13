@@ -122,6 +122,14 @@
     .header-btn:hover { border-color: rgba(255,255,255,0.3); }
     .header-btn-sub { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
     .header-btn-main { font-size: 0.8125rem; font-weight: 700; }
+    .demo-user-pill {
+      display: flex; flex-direction: column; align-items: flex-start;
+      padding: 0.35rem 0.65rem; border-radius: 8px;
+      background: rgba(0, 237, 100, 0.12); border: 1px solid rgba(0, 237, 100, 0.35);
+      min-width: 0;
+    }
+    .demo-user-pill-sub { font-size: 0.6rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.04em; }
+    .demo-user-pill-main { font-size: 0.75rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
     .cart-btn-header {
       display: flex; align-items: flex-end; gap: 0.2rem;
       padding: 0.4rem 0.65rem; border-radius: 6px;
@@ -141,6 +149,7 @@
       display: flex; align-items: center; justify-content: center;
     }
     .cart-badge.hidden { display: none; }
+    .hidden { display: none !important; }
 
     /* ===== MAIN ===== */
     .main {
@@ -656,6 +665,154 @@
     }
     .chat-send:hover { background: var(--mongo-green-dark); }
     .chat-send:disabled { opacity: 0.5; cursor: default; }
+
+    /* Agent trace (collapsible, per assistant turn) */
+    .agent-trace-wrap {
+      align-self: stretch; max-width: 100%;
+      border: 1px solid #c7d2fe; border-radius: 10px;
+      background: #f8faff; overflow: hidden;
+    }
+    .agent-trace-toggle {
+      width: 100%; text-align: left; border: none; background: #eef2ff;
+      color: #3730a3; font-size: 0.72rem; font-weight: 700;
+      padding: 0.5rem 0.7rem; cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .agent-trace-toggle:hover { background: #e0e7ff; }
+    .agent-trace-chevron { font-size: 0.65rem; width: 0.75rem; }
+    .agent-trace-body { padding: 0.55rem 0.65rem 0.65rem; display: flex; flex-direction: column; gap: 0.55rem; }
+    .agent-trace-body[hidden] { display: none !important; }
+    .agent-trace-step {
+      border: 1px solid var(--mongo-border); border-radius: 8px;
+      background: #fff; padding: 0.55rem 0.65rem;
+    }
+    .agent-trace-step.final { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; font-size: 0.72rem; font-weight: 700; }
+    .agent-trace-step.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; font-size: 0.72rem; }
+    .at-tool-name {
+      font-family: 'SF Mono', ui-monospace, monospace;
+      font-size: 0.75rem; font-weight: 800; color: var(--mongo-green-dark);
+    }
+    .at-args, .at-mongosh {
+      margin: 0.35rem 0 0; padding: 0.45rem 0.55rem;
+      background: #0d1117; color: #e6edf3; border-radius: 6px;
+      font-size: 0.65rem; line-height: 1.45; overflow-x: auto;
+      font-family: 'SF Mono', ui-monospace, monospace;
+    }
+    .at-result { margin-top: 0.35rem; font-size: 0.72rem; color: #4338ca; font-weight: 600; }
+    .at-mongo-title { margin-top: 0.45rem; font-size: 0.65rem; font-weight: 800; color: var(--mongo-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .at-mongo-card {
+      margin-top: 0.35rem; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden;
+    }
+    .at-mongo-head {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.5rem; background: var(--mongo-mist); font-size: 0.68rem;
+    }
+    .at-mongo-badge {
+      background: #dbeafe; color: #1e3a8a; font-weight: 800; font-size: 0.6rem;
+      padding: 2px 6px; border-radius: 999px; text-transform: uppercase;
+    }
+    .at-mongo-meta { margin-left: auto; color: var(--mongo-muted); font-size: 0.65rem; }
+    .at-mongo-label { padding: 0.35rem 0.5rem 0; font-size: 0.68rem; color: var(--mongo-text); }
+
+    /* Live MongoDB inspector (global FAB + slide-over) */
+    .live-mongo-fab {
+      position: fixed; bottom: 1.5rem; left: 1.5rem; z-index: 80;
+      display: flex; align-items: center; gap: 0.45rem;
+      background: #00684A; color: #fff; border: none; border-radius: 999px;
+      padding: 0.7rem 1rem; font-size: 0.78rem; font-weight: 700;
+      box-shadow: 0 8px 28px rgba(0,104,74,0.35); cursor: pointer;
+      font-family: inherit;
+    }
+    .agent-trace-fab {
+      position: fixed; bottom: 5.15rem; left: 1.5rem; z-index: 80;
+      display: flex; align-items: center; gap: 0.45rem;
+      background: #3730a3; color: #fff; border: none; border-radius: 999px;
+      padding: 0.7rem 1rem; font-size: 0.78rem; font-weight: 700;
+      box-shadow: 0 8px 28px rgba(55,48,163,0.35); cursor: pointer;
+      font-family: inherit;
+    }
+    .agent-trace-fab:hover { background: #312e81; }
+    .agent-trace-fab .fab-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #c7d2fe;
+    }
+    .agent-trace-open-overlay {
+      margin-left: auto; border: none; background: #3730a3; color: #fff;
+      font-size: 0.65rem; font-weight: 800; padding: 0.25rem 0.55rem;
+      border-radius: 999px; cursor: pointer; font-family: inherit;
+      white-space: nowrap;
+    }
+    .agent-trace-overlay {
+      position: fixed; inset: 0; z-index: 1120;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(2px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .agent-trace-overlay.open { opacity: 1; pointer-events: auto; }
+    .agent-trace-modal {
+      width: min(860px, 96vw); max-height: 92vh; background: #fff;
+      border-radius: 16px; display: flex; flex-direction: column;
+      box-shadow: 0 16px 64px rgba(0,30,43,0.28); overflow: hidden;
+    }
+    .agent-trace-modal-head {
+      padding: 0.9rem 1rem; background: #3730a3; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .agent-trace-modal-head h2 { margin: 0; font-size: 0.95rem; font-weight: 800; }
+    .agent-trace-modal-sub { font-size: 0.68rem; opacity: 0.85; margin-top: 0.15rem; }
+    .agent-trace-modal-body { flex: 1; overflow-y: auto; padding: 0.9rem; background: #f8faff; }
+    .agent-trace-modal-body .agent-trace-step { margin-bottom: 0.65rem; }
+    .live-mongo-fab:hover { background: #00553d; }
+    .live-mongo-fab .fab-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #6ee7b7;
+      box-shadow: 0 0 0 0 rgba(110,231,183,0.6);
+      animation: mongo-ping 2s infinite;
+    }
+    @keyframes mongo-ping {
+      0% { box-shadow: 0 0 0 0 rgba(110,231,183,0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(110,231,183,0); }
+      100% { box-shadow: 0 0 0 0 rgba(110,231,183,0); }
+    }
+    .live-mongo-count {
+      background: rgba(255,255,255,0.2); padding: 0.1rem 0.45rem;
+      border-radius: 999px; font-size: 0.68rem;
+    }
+    .live-mongo-overlay {
+      position: fixed; inset: 0; z-index: 1100;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+      display: flex; justify-content: flex-end;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .live-mongo-overlay.open { opacity: 1; pointer-events: auto; }
+    .live-mongo-panel {
+      width: min(520px, 100vw); height: 100%; background: #fff;
+      display: flex; flex-direction: column;
+      box-shadow: -12px 0 40px rgba(0,0,0,0.2);
+      transform: translateX(100%); transition: transform 0.22s ease;
+    }
+    .live-mongo-overlay.open .live-mongo-panel { transform: translateX(0); }
+    .live-mongo-panel-head {
+      padding: 0.9rem 1rem; background: #00684A; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .live-mongo-panel-head h2 { margin: 0; font-size: 0.95rem; font-weight: 800; }
+    .live-mongo-panel-sub { font-size: 0.68rem; opacity: 0.85; font-family: monospace; margin-top: 0.15rem; }
+    .live-mongo-panel-body { flex: 1; overflow-y: auto; padding: 0.75rem; background: #fafbfa; }
+    .live-query-card {
+      background: #fff; border: 1px solid var(--mongo-border);
+      border-radius: 8px; margin-bottom: 0.6rem; overflow: hidden;
+    }
+    .live-query-card-head {
+      padding: 0.45rem 0.6rem; background: var(--mongo-mist);
+      display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; font-size: 0.68rem;
+    }
+    .live-query-source {
+      font-size: 0.58rem; font-weight: 800; padding: 2px 6px; border-radius: 999px;
+      background: #e2e8f0; color: #334155; text-transform: uppercase;
+    }
+    .live-query-source.text { background: #fde68a; color: #78350f; }
+    .live-query-source.crud { background: #e2e8f0; color: #334155; }
+    .live-query-coll { font-family: monospace; font-weight: 700; color: var(--mongo-green-dark); }
+    .live-query-meta { margin-left: auto; color: var(--mongo-muted); font-size: 0.62rem; }
 
     /* ===== TRY-ON MODAL ===== */
     .tryon-overlay {
@@ -1326,10 +1483,6 @@
     </div>
 
     <div class="search-bar">
-      <select class="search-mode-select" id="modeSelect">
-        <option value="hybrid">Hybrid (RRF)</option>
-        <option value="rerank">Hybrid + Rerank</option>
-      </select>
       <input class="search-input" type="search" id="q" placeholder='Try "recommend me graphics cards under $2000"...' autocomplete="off" />
       <button class="camera-btn" id="cameraBtn" aria-label="Search by image" title="Search by image (multimodal)">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -1341,6 +1494,10 @@
     </div>
 
     <div class="header-actions">
+      <div class="demo-user-pill" id="demoUserPill" title="Workshop demo account — no password required">
+        <span class="demo-user-pill-sub">Signed in as</span>
+        <span class="demo-user-pill-main" id="demoUserName">Alex Chen</span>
+      </div>
       <button class="header-btn" id="sellerBtn">
         <span class="header-btn-sub">Seller</span>
         <span class="header-btn-main">Dashboard</span>
@@ -1378,11 +1535,6 @@
 <!-- MAIN -->
 <div class="main">
   <aside class="sidebar">
-    <h3>Search Mode</h3>
-    <div class="filter-group">
-      <label class="filter-option"><input type="radio" name="mode" value="hybrid" checked> Hybrid (RRF) <span class="mode-badge">DEFAULT</span></label>
-      <label class="filter-option"><input type="radio" name="mode" value="rerank"> Hybrid + Rerank</label>
-    </div>
     <h3>Department</h3>
     <div class="filter-group" id="sidebarCategories">
       <label class="filter-option"><input type="radio" name="cat" value="" checked> All Departments</label>
@@ -1401,13 +1553,12 @@
     <div class="hero-banner">
       <div class="hero-left">
         <h2>Search smarter with MongoDB Atlas</h2>
-        <p>Experience Vector Search, Full-Text Search, Hybrid Fusion, and Voyage AI Reranking — all in one shop.</p>
+        <p>Product search uses Hybrid RRF — vector + full-text fusion powered by Atlas and Voyage AI.</p>
       </div>
       <div class="hero-pills">
         <span class="hero-pill">Atlas Vector Search</span>
         <span class="hero-pill">Voyage AI</span>
         <span class="hero-pill">Hybrid RRF</span>
-        <span class="hero-pill">Reranking</span>
       </div>
     </div>
     <div class="imgsearch-banner" id="imgsearchBanner" style="display:none">
@@ -1496,11 +1647,11 @@
 </button>
 <div class="chat-panel" id="chatPanel">
   <div class="chat-header">
-    <div><h3>Product Support Agent</h3><span class="chat-header-sub">Ollama + MongoDB · explicit tool loop</span></div>
+    <div><h3>Product Support Agent</h3><span class="chat-header-sub">Ollama + MongoDB memory layer · Alex (demo_user)</span></div>
     <button class="chat-close" id="chatClose">&times;</button>
   </div>
   <div class="chat-messages" id="chatMessages">
-    <div class="chat-msg assistant">Hi! I'm the <b>LeafyShop Product Support Agent</b>. Ask about returns, shipping, product compatibility, or catalog search. Try: <b>"What is your returns policy?"</b> or <b>"Tell me about vector search on LeafyShop"</b>. Say <b>remember that I prefer concise answers</b> to test session memory.</div>
+    <div class="chat-msg assistant">Hi Alex! I'm your <b>LeafyShop Product Support Agent</b>. I remember your profile, purchase history, and chat — all stored in <b>MongoDB</b>.<br><br>Try:<br>• <b>"What is your returns policy?"</b><br>• <b>"What have I bought before?"</b><br>• <b>"Recommend something based on my interests"</b><br>• <b>"Remember that I prefer concise answers"</b><br><br>Shop and checkout first — your orders feed into my recommendations.</div>
   </div>
   <div class="chat-input-row">
     <input class="chat-input" id="chatInput" type="text" placeholder="Ask about policies, products, or compatibility..." />
@@ -1620,21 +1771,62 @@
   </div>
 </div>
 
+<!-- Agent trace overlay -->
+<button class="agent-trace-fab" id="agentTraceFab" type="button" aria-label="Open Agent trace">
+  <span class="fab-dot"></span>
+  <span>Agent trace</span>
+  <span class="live-mongo-count hidden" id="agentTraceCount">0</span>
+</button>
+<div class="agent-trace-overlay" id="agentTraceOverlay">
+  <div class="agent-trace-modal">
+    <div class="agent-trace-modal-head">
+      <div>
+        <h2>Agent trace</h2>
+        <div class="agent-trace-modal-sub" id="agentTraceSub">Ollama tool loop · MongoDB ops</div>
+      </div>
+      <button class="query-close" id="agentTraceClose" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="agent-trace-modal-body" id="agentTraceOverlayBody">
+      <div class="query-intro">Ask the green chat bubble a question. The observe → decide → act loop lands here — tools, arguments, and the MongoDB commands they ran.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Live MongoDB Inspector (agent + all app queries) -->
+<button class="live-mongo-fab" id="liveMongoFab" type="button" aria-label="Open Live MongoDB Inspector">
+  <span class="fab-dot"></span>
+  <span>Live MongoDB</span>
+  <span class="live-mongo-count hidden" id="liveMongoCount">0</span>
+</button>
+<div class="live-mongo-overlay" id="liveMongoOverlay">
+  <div class="live-mongo-panel">
+    <div class="live-mongo-panel-head">
+      <div>
+        <h2>MongoDB Live Inspector</h2>
+        <div class="live-mongo-panel-sub" id="liveMongoSub">workshop · Atlas</div>
+      </div>
+      <button class="query-close" id="liveMongoClose" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="live-mongo-panel-body" id="liveMongoBody">
+      <div class="query-intro">Every <b>real</b> MongoDB command executed by the support agent and storefront is logged here with copy-paste <b>mongosh</b> syntax.</div>
+    </div>
+  </div>
+</div>
+
 <footer class="footer">
-  <p>&copy; 2026 <strong>LeafyShop</strong> &mdash; GenAI Workshop Demo &middot; Powered by <strong>MongoDB Atlas Vector Search</strong> &middot; <strong>Voyage AI</strong> Embeddings</p>
+  <p>&copy; 2026 <strong>LeafyShop</strong> &mdash; GraphRAG Workshop Demo &middot; Powered by <strong>MongoDB Atlas</strong> &middot; <strong>Voyage AI</strong> Embeddings</p>
 </footer>
 
 <script>
 (function () {
   var CART_KEY = "ls_cart";
   var cart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
-  var mode = "hybrid";
+  var mode = "hybrid"; // fixed — workshop demo uses hybrid RRF only
   var category = "";
   var debounceTimer = null;
   var lastResults = [];
 
   var qEl = document.getElementById("q");
-  var modeSelect = document.getElementById("modeSelect");
   var resultsEl = document.getElementById("results");
   var resultsCount = document.getElementById("resultsCount");
   var loadingEl = document.getElementById("loading");
@@ -1690,10 +1882,39 @@
   var tryonBody = document.getElementById("tryonBody");
 
   var chatHistory = [];
+  var DEMO_USER_ID = "demo_user";
+  var demoUserName = "Alex Chen";
   var supportSessionId = localStorage.getItem("leafyshop_support_session") || "";
   if (!supportSessionId) {
     supportSessionId = "sess-" + Math.random().toString(36).slice(2, 10);
     localStorage.setItem("leafyshop_support_session", supportSessionId);
+  }
+  var demoUserNameEl = document.getElementById("demoUserName");
+
+  function loadDemoUserProfile() {
+    fetch("api/user/profile?user_id=" + encodeURIComponent(DEMO_USER_ID))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data || !data.profile) return;
+        demoUserName = data.profile.display_name || demoUserName;
+        if (demoUserNameEl) demoUserNameEl.textContent = demoUserName;
+      })
+      .catch(function() {});
+  }
+  loadDemoUserProfile();
+
+  function recordProductInterest(product) {
+    if (!product || !product.name) return;
+    fetch("api/user/interest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: DEMO_USER_ID,
+        product_name: product.name,
+        category: product.category || "",
+        brand: product.brand || ""
+      })
+    }).catch(function() {});
   }
   var tryonState = { product: null, imageBase64: null, analysis: null, generatedImage: null };
 
@@ -1875,6 +2096,7 @@
   }
 
   function addToCart(product) {
+    recordProductInterest(product);
     var existing = cart.find(function(c) { return c.name === product.name; });
     if (existing) existing.quantity += 1;
     else cart.push({ name: product.name, price: product.price, category: product.category || "", brand: product.brand || "", quantity: 1 });
@@ -1905,6 +2127,14 @@
       })
       .then(function(data) {
         if (!data || !data.results) throw new Error("response had no 'results' field");
+        if (!data.results.length) {
+          resultsEl.innerHTML = '<div class="empty-results">Home page is empty until you fill ' +
+            '<code>backend/catalog_browse.py</code> (TODO 1a <code>find()</code>, TODO 1b category filter). ' +
+            'Restart uvicorn, then reload. The <strong>search bar</strong> still works — it uses ' +
+            '<code>/api/search</code>, not this browse query. Solution: <code>scripts/answers/catalog_browse.py</code>.</div>';
+          resultsCount.innerHTML = 'Fill catalog_browse.py to load the grid';
+          return;
+        }
         renderResults(data);
       })
       .catch(function(err) {
@@ -1932,7 +2162,7 @@
     }
     setLoading(true);
     var params = new URLSearchParams();
-    params.set("q", q); params.set("mode", mode);
+    params.set("q", q);
     if (category) params.set("category", category);
     fetch("api/search?" + params.toString())
       .then(function(r) { return r.json(); })
@@ -1957,20 +2187,6 @@
   qEl.addEventListener("input", scheduleSearch);
   searchBtn.addEventListener("click", runSearch);
   qEl.addEventListener("keydown", function(e) { if (e.key === "Enter") runSearch(); });
-
-  modeSelect.addEventListener("change", function() {
-    mode = modeSelect.value;
-    document.querySelectorAll('input[name="mode"]').forEach(function(r) { r.checked = r.value === mode; });
-    if ((qEl.value || "").trim()) runSearch();
-  });
-
-  document.querySelectorAll('input[name="mode"]').forEach(function(r) {
-    r.addEventListener("change", function() {
-      mode = r.value;
-      modeSelect.value = mode;
-      if ((qEl.value || "").trim()) runSearch();
-    });
-  });
 
   document.querySelectorAll('input[name="cat"]').forEach(function(r) {
     r.addEventListener("change", function() {
@@ -2025,7 +2241,7 @@
     fetch("api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_name: "LeafyShop User", items: cart, search_mode: mode })
+      body: JSON.stringify({ user_id: DEMO_USER_ID, user_name: demoUserName, items: cart, search_mode: mode })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -2038,10 +2254,10 @@
   }
 
   function renderOrdersDrawer() {
-    drawerTitle.textContent = "Your Orders";
+    drawerTitle.textContent = demoUserName + "'s Orders";
     drawerBody.innerHTML = '<div class="empty-cart">Loading\u2026</div>';
     drawerFooter.innerHTML = "";
-    fetch("api/orders?user_name=LeafyShop%20User")
+    fetch("api/orders?user_id=" + encodeURIComponent(DEMO_USER_ID))
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var orders = data.orders || [];
@@ -2236,6 +2452,211 @@
     return div;
   }
 
+  function agentTraceStepHtml(step) {
+    if (step.kind === "final") {
+      return '<div class="agent-trace-step final">Final answer ready</div>';
+    }
+    if (step.kind === "error") {
+      return '<div class="agent-trace-step error">' + esc(step.summary || "Error") + "</div>";
+    }
+    var html = '<div class="agent-trace-step"><div class="at-tool"><span class="at-tool-name">' +
+      esc(step.tool || "tool") + "</span>";
+    if (step.arguments && Object.keys(step.arguments).length) {
+      html += '<pre class="at-args">' + esc(JSON.stringify(step.arguments, null, 2)) + "</pre>";
+    }
+    if (step.result_summary) {
+      html += '<div class="at-result">→ ' + esc(step.result_summary) + "</div>";
+    }
+    if (step.mongodb_queries && step.mongodb_queries.length) {
+      html += '<div class="at-mongo-title">MongoDB operations</div>';
+      step.mongodb_queries.forEach(function(q) {
+        html += '<div class="at-mongo-card"><div class="at-mongo-head">' +
+          '<span class="at-mongo-badge">' + esc(q.operation || "find") + "</span>" +
+          "<code>workshop." + esc(q.collection || "") + "</code>" +
+          '<span class="at-mongo-meta">' + (q.latency_ms || 0) + "ms · " +
+          (q.result_count != null ? q.result_count : "—") + " docs</span></div>" +
+          '<div class="at-mongo-label">' + esc(q.label || "") + "</div>" +
+          '<pre class="at-mongosh">' + esc(q.mongosh || "") + "</pre></div>";
+      });
+    }
+    html += "</div></div>";
+    return html;
+  }
+
+  var lastAgentTrace = null;
+  var agentTraceOverlay = document.getElementById("agentTraceOverlay");
+  var agentTraceOverlayBody = document.getElementById("agentTraceOverlayBody");
+  var agentTraceFab = document.getElementById("agentTraceFab");
+  var agentTraceClose = document.getElementById("agentTraceClose");
+  var agentTraceCount = document.getElementById("agentTraceCount");
+  var agentTraceSub = document.getElementById("agentTraceSub");
+
+  function fillAgentTraceOverlay(agentTrace) {
+    if (!agentTraceOverlayBody) return;
+    if (!agentTrace || !agentTrace.steps || !agentTrace.steps.length) {
+      agentTraceOverlayBody.innerHTML = '<div class="query-intro">No agent trace yet. Ask the green chat bubble a question.</div>';
+      return;
+    }
+    var n = agentTrace.tool_calls || 0;
+    var latency = agentTrace.latency_ms ? Math.round(agentTrace.latency_ms) + "ms" : "";
+    if (agentTraceSub) {
+      agentTraceSub.textContent = n + " tool call" + (n === 1 ? "" : "s") +
+        (latency ? " · " + latency : "") + " · Ollama + MongoDB";
+    }
+    if (agentTraceCount) {
+      agentTraceCount.textContent = String(n);
+      agentTraceCount.classList.toggle("hidden", n < 1);
+    }
+    agentTraceOverlayBody.innerHTML = agentTrace.steps.map(agentTraceStepHtml).join("");
+  }
+
+  function showAgentTraceOverlay(agentTrace) {
+    if (agentTrace) lastAgentTrace = agentTrace;
+    fillAgentTraceOverlay(lastAgentTrace);
+    if (agentTraceOverlay) agentTraceOverlay.classList.add("open");
+  }
+
+  function hideAgentTraceOverlay() {
+    if (agentTraceOverlay) agentTraceOverlay.classList.remove("open");
+  }
+
+  if (agentTraceFab) {
+    agentTraceFab.addEventListener("click", function() { showAgentTraceOverlay(lastAgentTrace); });
+  }
+  if (agentTraceClose) {
+    agentTraceClose.addEventListener("click", hideAgentTraceOverlay);
+  }
+  if (agentTraceOverlay) {
+    agentTraceOverlay.addEventListener("click", function(e) {
+      if (e.target === agentTraceOverlay) hideAgentTraceOverlay();
+    });
+  }
+
+  function renderAgentTrace(agentTrace) {
+    if (!agentTrace || !agentTrace.steps || !agentTrace.steps.length) return null;
+    lastAgentTrace = agentTrace;
+    fillAgentTraceOverlay(agentTrace);
+    var toolCount = agentTrace.tool_calls || 0;
+    var latency = agentTrace.latency_ms ? Math.round(agentTrace.latency_ms) + "ms" : "";
+    var wrap = document.createElement("div");
+    wrap.className = "agent-trace-wrap";
+    var toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "agent-trace-toggle";
+    toggle.innerHTML = '<span class="agent-trace-chevron">▾</span> Agent trace · ' + toolCount +
+      " tool call" + (toolCount === 1 ? "" : "s") + (latency ? " · " + latency : "") +
+      '<span class="agent-trace-open-overlay">Open overlay</span>';
+    var body = document.createElement("div");
+    body.className = "agent-trace-body";
+    agentTrace.steps.forEach(function(step) {
+      if (step.kind === "final" || step.kind === "error") {
+        var block = document.createElement("div");
+        block.innerHTML = agentTraceStepHtml(step);
+        body.appendChild(block.firstChild);
+        return;
+      }
+      var compact = document.createElement("div");
+      compact.className = "agent-trace-step";
+      compact.innerHTML = '<span class="at-tool-name">' + esc(step.tool || "tool") + "</span>" +
+        (step.result_summary ? '<div class="at-result">→ ' + esc(step.result_summary) + "</div>" : "");
+      body.appendChild(compact);
+    });
+    toggle.addEventListener("click", function(e) {
+      if (e.target && e.target.classList && e.target.classList.contains("agent-trace-open-overlay")) {
+        showAgentTraceOverlay(agentTrace);
+        return;
+      }
+      var open = body.hidden;
+      body.hidden = !open;
+      toggle.querySelector(".agent-trace-chevron").textContent = open ? "▾" : "▸";
+    });
+    wrap.appendChild(toggle);
+    wrap.appendChild(body);
+    return wrap;
+  }
+
+  /* ===== Live MongoDB Inspector ===== */
+  var liveMongoFab = document.getElementById("liveMongoFab");
+  var liveMongoOverlay = document.getElementById("liveMongoOverlay");
+  var liveMongoClose = document.getElementById("liveMongoClose");
+  var liveMongoBody = document.getElementById("liveMongoBody");
+  var liveMongoCount = document.getElementById("liveMongoCount");
+  var liveMongoSub = document.getElementById("liveMongoSub");
+  var liveMongoPoll = null;
+
+  var lastLiveQueryData = null;
+
+  function renderLiveQueries(data) {
+    if (!liveMongoBody) return;
+    var intro = '<div class="query-intro">Every <b>real</b> MongoDB command executed by the support agent and storefront is logged here with copy-paste <b>mongosh</b> syntax.</div>';
+    if (!data || !data.queries || !data.queries.length) {
+      liveMongoBody.innerHTML = intro + '<div class="empty-cart">No queries yet. Ask the support agent a question, or search the catalog.</div>';
+      return;
+    }
+    lastLiveQueryData = data;
+    liveMongoBody.innerHTML = intro + data.queries.map(function(q) {
+      var srcCls = q.source === "text" ? "text" : "crud";
+      return '<div class="live-query-card"><div class="live-query-card-head">' +
+        '<span class="live-query-source ' + srcCls + '">' + esc(q.source || "crud") + "</span>" +
+        '<span class="live-query-coll">workshop.' + esc(q.collection) + "." + esc(q.operation) + "()</span>" +
+        '<span class="live-query-meta">' + (q.latency_ms || 0) + "ms · " + (q.result_count != null ? q.result_count : "—") + " docs</span></div>" +
+        '<div class="at-mongo-label" style="padding:0.4rem 0.6rem">' + esc(q.label || "") + "</div>" +
+        '<pre class="at-mongosh" style="margin:0;border-radius:0">' + esc(q.mongosh || "") + "</pre></div>";
+    }).join("");
+  }
+
+  function loadLiveQueries() {
+    return fetch("/api/queries?limit=50", { cache: "no-store" })
+      .then(function(r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        if (liveMongoSub && data.cluster) {
+          liveMongoSub.textContent = data.cluster + " / " + (data.db || "workshop");
+        }
+        if (liveMongoCount) {
+          liveMongoCount.textContent = data.count || 0;
+          liveMongoCount.classList.toggle("hidden", !(data.count > 0));
+        }
+        renderLiveQueries(data);
+        return data;
+      })
+      .catch(function(err) {
+        if (liveMongoBody) {
+          liveMongoBody.innerHTML = '<div class="query-intro">Could not load the MongoDB query log (' +
+            esc(String((err && err.message) || err)) + ").</div>";
+        }
+        return lastLiveQueryData;
+      });
+  }
+
+  if (liveMongoFab) {
+    liveMongoFab.addEventListener("click", function() {
+      liveMongoOverlay.classList.add("open");
+      if (lastLiveQueryData) renderLiveQueries(lastLiveQueryData);
+      loadLiveQueries();
+      if (liveMongoPoll) clearInterval(liveMongoPoll);
+      liveMongoPoll = setInterval(loadLiveQueries, 3000);
+    });
+  }
+  if (liveMongoClose) {
+    liveMongoClose.addEventListener("click", function() {
+      liveMongoOverlay.classList.remove("open");
+      if (liveMongoPoll) { clearInterval(liveMongoPoll); liveMongoPoll = null; }
+    });
+  }
+  if (liveMongoOverlay) {
+    liveMongoOverlay.addEventListener("click", function(e) {
+      if (e.target === liveMongoOverlay) {
+        liveMongoOverlay.classList.remove("open");
+        if (liveMongoPoll) { clearInterval(liveMongoPoll); liveMongoPoll = null; }
+      }
+    });
+  }
+  loadLiveQueries();
+  setInterval(loadLiveQueries, 8000);
+
   function sendChat() {
     var msg = (chatInput.value || "").trim();
     if (!msg) return;
@@ -2251,14 +2672,24 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: msg,
-        session_id: supportSessionId
+        session_id: supportSessionId,
+        user_id: DEMO_USER_ID
       })
     })
-    .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+    .then(function(r) {
+      return r.text().then(function(text) {
+        var data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (e) {
+          data = { detail: (text || ("HTTP " + r.status)).slice(0, 280) };
+        }
+        return { ok: r.ok, data: data };
+      });
+    })
     .then(function(res) {
       thinkingEl.remove();
       if (!res.ok) {
-        appendChatMsg("assistant", esc(res.data.detail || "Support agent unavailable."));
+        var detail = res.data && res.data.detail;
+        appendChatMsg("assistant", esc(typeof detail === "string" ? detail : "Support agent unavailable."));
         return;
       }
       var data = res.data;
@@ -2266,22 +2697,25 @@
         supportSessionId = data.session_id;
         localStorage.setItem("leafyshop_support_session", supportSessionId);
       }
-      if (data.trace && data.trace.length) {
-        data.trace.forEach(function(t) {
-          var label = "[step " + t.step + "] ";
-          if (t.kind === "tool_call") label += "decision: tool_call → " + (t.tool || "");
-          else if (t.kind === "tool_result") label += "tool result: " + (t.summary || "");
-          else if (t.kind === "final") label += "decision: final";
-          else label += t.kind + (t.summary ? ": " + t.summary : "");
-          appendChatMsg("tool-info", esc(label));
+      var traceEl = renderAgentTrace(data.agent_trace);
+      if (traceEl) {
+        chatMessages.appendChild(traceEl);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        showAgentTraceOverlay(data.agent_trace);
+      }
+      loadLiveQueries();
+      if (Array.isArray(data.cart_items)) {
+        data.cart_items.forEach(function(item) {
+          if (item && item.name) addToCart(item);
         });
       }
       var reply = data.reply || "Sorry, I couldn't process that.";
-      appendChatMsg("assistant", reply.replace(/\n/g, "<br>"));
+      appendChatMsg("assistant", String(reply).replace(/\n/g, "<br>"));
     })
-    .catch(function() {
+    .catch(function(err) {
       thinkingEl.remove();
-      appendChatMsg("assistant", "Sorry, I'm having trouble connecting. Make sure uvicorn is running and Ollama is started (ollama serve).");
+      var detail = (err && err.message) ? err.message : String(err || "unknown error");
+      appendChatMsg("assistant", "Sorry, the support agent request failed: " + esc(detail));
     })
     .finally(function() { chatSend.disabled = false; });
   }
@@ -2318,19 +2752,18 @@
 
   function fetchExplainData() {
     // Returns a Promise that resolves to the cached or freshly-fetched explain payload.
-    if (lastExplainData && lastExplainData.__query === lastQuery && lastExplainData.__mode === mode && lastExplainData.__cat === category) {
+    if (lastExplainData && lastExplainData.__query === lastQuery && lastExplainData.__cat === category) {
       return Promise.resolve(lastExplainData);
     }
     var params = new URLSearchParams();
     params.set("q", lastQuery);
-    params.set("mode", mode);
     params.set("explain", "1");
     if (category) params.set("category", category);
     return fetch("api/search?" + params.toString())
       .then(function(r) { return r.json(); })
       .then(function(data) {
         // tag the cached payload so we know when it's stale
-        data.__query = lastQuery; data.__mode = mode; data.__cat = category;
+        data.__query = lastQuery; data.__cat = category;
         lastExplainData = data;
         return data;
       });
@@ -2339,7 +2772,7 @@
   function openExplainModal() {
     if (!lastQuery) return;
     explainOverlay.classList.add("open");
-    explainModePill.textContent = (mode === "rerank" ? "HYBRID + RERANK" : "HYBRID (RRF)");
+    explainModePill.textContent = "HYBRID (RRF)";
     explainHeaderSub.textContent = 'Query: "' + esc(lastQuery) + '"   ·   ' + (category || "All departments");
     explainBody.innerHTML = '<div style="text-align:center;color:var(--mongo-muted);font-size:0.85rem;padding:2rem">Loading pipeline diagnostics…</div>';
     fetchExplainData()
@@ -2352,7 +2785,7 @@
   function openQueryModal() {
     if (!lastQuery) return;
     queryOverlay.classList.add("open");
-    queryHeaderSub.textContent = 'Query: "' + esc(lastQuery) + '"   ·   mode: ' + mode + '   ·   ' + (category || "All departments");
+    queryHeaderSub.textContent = 'Query: "' + esc(lastQuery) + '"   ·   hybrid RRF   ·   ' + (category || "All departments");
     queryBody.innerHTML = '<div style="text-align:center;color:var(--mongo-muted);font-size:0.85rem;padding:2rem">Loading MongoDB queries…</div>';
     fetchExplainData()
       .then(function(data) { renderQueryModal(data); })
@@ -2830,8 +3263,8 @@
     // Intro
     html += '<div class="query-intro">' +
       '<b>What you\'re looking at:</b> the exact MongoDB operations the backend ran for your query <code>' + esc(data.query) + '</code> ' +
-      '(mode <b>' + esc(data.mode) + '</b>). You can copy any of these snippets directly into <b>MongoDB Compass</b>, the <b>Atlas Aggregation Pipeline Builder</b>, ' +
-      'or paste them into a notebook to verify what the application actually did.' +
+      '(mode <b>' + esc(data.mode) + '</b>). You can copy any of these snippets directly into <b>MongoDB Compass</b> or the <b>Atlas Aggregation Pipeline Builder</b> ' +
+      'to verify what the application actually did.' +
       '</div>';
 
     // Find the relevant stages

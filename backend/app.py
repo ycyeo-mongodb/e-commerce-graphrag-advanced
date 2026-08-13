@@ -28,6 +28,19 @@ from pymongo import MongoClient
 import voyageai
 
 from agent import SupportAgent
+from agent.agent import build_agent_trace
+from agent.query_log import get_cluster_label, get_recent_queries, set_active_session
+from agent.tools import persist_conversation_turn
+from catalog_browse import browse_products
+
+# Workshop wiring — UI → API → lab file
+#   Page load / sidebar     GET  /api/products        backend/catalog_browse.py
+#   Search bar              GET  /api/search          app.py hybrid_search (not a lab)
+#   Green chat bubble       POST /api/support/chat    agent/tools.py + retrieval_starter.py
+#   Checkout / orders       POST /api/checkout, GET /api/orders   app.py (data for Part 2)
+#   Live MongoDB overlay    GET  /api/queries         agent/query_log.py
+# Solutions: scripts/answers/catalog_browse.py, scripts/answers/tools.py,
+#            scripts/answers/retrieval_starter.py
 
 load_dotenv()
 
@@ -43,6 +56,8 @@ coll = None
 orders_coll = None
 knowledge_coll = None
 memories_coll = None
+user_profiles_coll = None
+conversations_coll = None
 vo: voyageai.Client = None
 _watcher_stop = threading.Event()
 _watcher_thread: Optional[threading.Thread] = None
@@ -120,13 +135,15 @@ def _catalog_watcher_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global db_client, coll, orders_coll, knowledge_coll, memories_coll, vo, _watcher_thread
+    global db_client, coll, orders_coll, knowledge_coll, memories_coll, user_profiles_coll, conversations_coll, vo, _watcher_thread
     db_client = MongoClient(os.environ["MONGODB_URI"])
     db = db_client["workshop"]
     coll = db["products"]
     orders_coll = db["orders"]
     knowledge_coll = db["knowledge_base"]
     memories_coll = db["memories"]
+    user_profiles_coll = db["user_profiles"]
+    conversations_coll = db["conversations"]
     vo = voyageai.Client(api_key=os.environ["VOYAGE_API_KEY"])
 
     if os.environ.get("ENABLE_CATALOG_WATCHER", "0") == "1" and os.environ.get("BEDROCK_API_URL"):
@@ -170,7 +187,7 @@ HYBRID_CANDIDATES = 50      # docs pulled from each retriever before fusion
 RERANK_CANDIDATES = 30      # docs sent into the reranker after RRF
 FUZZY_MAX_EDITS = 2         # Atlas Search fuzzy: 0–2 character edits tolerated
 FUZZY_PREFIX_LEN = 1        # first N chars must match exactly (faster + safer)
-POPULARITY_WEIGHT = 1.0     # weight of the popularity retriever in RRF (0 = off, 1 = equal to vector/text)
+POPULARITY_WEIGHT = 0.2     # mild tiebreaker only (intent=none). Equal weight lets high-review noise beat GPUs.
 POPULARITY_INTENT_RE = r"\b(popular|popularity|bestseller|best[- ]?selling|top[- ]?rated|highest[- ]?rated|best[- ]?rated|highly[- ]?rated|most[- ]?loved|trending|favorite|favourite)\b"
 REVIEWS_INTENT_RE = r"\b(most[- ]?reviewed|highly[- ]?reviewed|most[- ]?reviews|reviewed)\b"
 POPULARITY_INTENT_WEIGHT = 4.0  # bump popularity retriever further when the query asks for it
@@ -181,21 +198,16 @@ IMAGE_RESIZE_MAX = 1024              # cap longest side; multimodal models token
 @app.get("/api/search")
 def search(
     q: str = Query(..., min_length=1),
-    mode: str = Query("hybrid", pattern="^(vector|text|hybrid|rerank)$"),
     category: Optional[str] = None,
     limit: int = Query(12, ge=1, le=50),
     explain: bool = Query(False, description="Include per-stage diagnostics for the UI modal."),
 ):
-    if mode == "vector":
-        results, debug = vector_search(q, category, limit, explain=explain)
-    elif mode == "text":
-        results, debug = text_search(q, category, limit, explain=explain)
-    elif mode == "rerank":
-        results, debug = hybrid_rerank_search(q, category, limit, explain=explain)
-    else:
-        results, debug = hybrid_search(q, category, limit, explain=explain)
+    """Product search — workshop demo always uses hybrid RRF (vector + text fusion).
+    Search bar only. Not a lab — product indexes come from scripts/TO-DO/02_create_indexes.py.
+    """
+    results, debug = hybrid_search(q, category, limit, explain=explain)
 
-    payload = {"query": q, "mode": mode, "count": len(results), "results": results}
+    payload = {"query": q, "mode": "hybrid", "count": len(results), "results": results}
     if explain:
         payload["explain"] = debug
     return payload
@@ -208,29 +220,14 @@ def list_products(
     sort: str = Query("popular", pattern="^(popular|newest|rating|price_asc|price_desc)$"),
     limit: int = Query(12, ge=1, le=60),
 ):
-    """Browse endpoint (no search query required) so the storefront can show
-    real listings on page load. Backed by a plain MongoDB find().sort().limit().
-
-    This is intentionally simple — it demonstrates that the same collection that
-    powers vector/hybrid search also serves an ordinary catalog browse.
-    """
-    filter_expr: dict = {}
-    if category:
-        filter_expr["category"] = category
-    if subcategory:
-        filter_expr["subcategory"] = subcategory
-
-    sort_spec = {
-        "popular": [("reviews_count", -1), ("rating", -1)],
-        "rating": [("rating", -1), ("reviews_count", -1)],
-        "newest": [("id", -1)],
-        "price_asc": [("price", 1)],
-        "price_desc": [("price", -1)],
-    }[sort]
-
-    projection = {"description_embedding": 0, "multimodal_embedding": 0}
-    cursor = coll.find(filter_expr, projection).sort(sort_spec).limit(limit)
-    results = _serialize(cursor)
+    """Home page + sidebar. Lab: backend/catalog_browse.py (find + category filter)."""
+    results = browse_products(
+        coll,
+        category=category,
+        subcategory=subcategory,
+        sort=sort,
+        limit=limit,
+    )
     return {
         "mode": "browse",
         "sort": sort,
@@ -272,8 +269,12 @@ def _build_text_pipeline(query: str, category: Optional[str], limit: int) -> lis
     Why two clauses?
       * `should[0]` (boosted exact text) — clean queries score highest
       * `should[1]` (fuzzy) — `runing` still finds `running` (typo recovery)
+
+    minimumShouldMatch: a 3+ word query must match at least two tokens so a
+    stray word like "cards" in a belt description cannot win the text retriever.
     """
     fuzzy_cfg = {"maxEdits": FUZZY_MAX_EDITS, "prefixLength": FUZZY_PREFIX_LEN}
+    n_terms = len([t for t in query.split() if t])
     compound: dict = {
         "should": [
             {
@@ -291,7 +292,7 @@ def _build_text_pipeline(query: str, category: Optional[str], limit: int) -> lis
                 }
             },
         ],
-        "minimumShouldMatch": 1,
+        "minimumShouldMatch": 2 if n_terms >= 3 else 1,
     }
     if category:
         compound["filter"] = [{"text": {"query": category, "path": "category"}}]
@@ -835,7 +836,8 @@ class CartItem(BaseModel):
 
 
 class CheckoutRequest(BaseModel):
-    user_name: str
+    user_name: str = ""
+    user_id: str = ""
     items: list[CartItem]
     search_mode: str = "hybrid"
 
@@ -845,9 +847,19 @@ def checkout(req: CheckoutRequest):
     if not req.items:
         return {"error": "Cart is empty"}
 
+    user_id = (req.user_id or "").strip()
+    user_name = (req.user_name or "").strip()
+    if user_id and user_profiles_coll is not None:
+        profile = user_profiles_coll.find_one({"user_id": user_id}, {"display_name": 1})
+        if profile:
+            user_name = profile.get("display_name") or user_name
+    if not user_name:
+        user_name = "LeafyShop User"
+
     total = round(sum(item.price * item.quantity for item in req.items), 2)
     order_doc = {
-        "user_name": req.user_name,
+        "user_id": user_id or None,
+        "user_name": user_name,
         "items": [item.model_dump() for item in req.items],
         "total": total,
         "item_count": sum(item.quantity for item in req.items),
@@ -860,8 +872,15 @@ def checkout(req: CheckoutRequest):
 
 
 @app.get("/api/orders")
-def get_orders(user_name: str = Query(...)):
-    cursor = orders_coll.find({"user_name": user_name}).sort("created_at", -1).limit(20)
+def get_orders(user_name: str = Query(None), user_id: str = Query(None)):
+    if user_id:
+        query = {"user_id": user_id}
+    elif user_name:
+        query = {"user_name": user_name}
+    else:
+        return {"orders": []}
+
+    cursor = orders_coll.find(query).sort("created_at", -1).limit(20)
     orders = []
     for doc in cursor:
         doc["_id"] = str(doc["_id"])
@@ -869,6 +888,66 @@ def get_orders(user_name: str = Query(...)):
             doc["created_at"] = doc["created_at"].isoformat()
         orders.append(doc)
     return {"orders": orders}
+
+
+class UserInterestRequest(BaseModel):
+    user_id: str
+    product_name: str
+    category: str = ""
+    brand: str = ""
+
+
+@app.get("/api/user/profile")
+def get_user_profile_api(user_id: str = Query(...)):
+    if user_profiles_coll is None:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    doc = user_profiles_coll.find_one({"user_id": user_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"User {user_id!r} not found")
+
+    member_since = doc.get("member_since")
+    if member_since and isinstance(member_since, datetime):
+        doc["member_since"] = member_since.isoformat()
+    for item in doc.get("recently_viewed") or []:
+        viewed_at = item.get("viewed_at")
+        if viewed_at and isinstance(viewed_at, datetime):
+            item["viewed_at"] = viewed_at.isoformat()
+    return {"profile": doc}
+
+
+@app.post("/api/user/interest")
+def record_user_interest(req: UserInterestRequest):
+    """Track product interest for the demo shopper profile."""
+    if user_profiles_coll is None:
+        raise HTTPException(status_code=503, detail="Database not initialized")
+
+    user_id = req.user_id.strip()
+    product_name = req.product_name.strip()
+    if not user_id or not product_name:
+        return {"recorded": False, "reason": "user_id and product_name required"}
+
+    entry = {
+        "product_name": product_name,
+        "category": req.category.strip(),
+        "brand": req.brand.strip(),
+        "viewed_at": datetime.now(timezone.utc),
+    }
+    user_profiles_coll.update_one(
+        {"user_id": user_id},
+        {
+            "$push": {
+                "recently_viewed": {
+                    "$each": [entry],
+                    "$position": 0,
+                    "$slice": 20,
+                }
+            },
+            "$set": {"updated_at": datetime.now(timezone.utc)},
+        },
+        upsert=False,
+    )
+    return {"recorded": True, "product_name": product_name}
 
 
 class SellerProduct(BaseModel):
@@ -916,28 +995,80 @@ def healthz():
     return {"status": "ok"}
 
 
+@app.get("/api/queries")
+def list_queries(limit: int = Query(50, ge=1, le=100), session_id: str | None = None):
+    """Live MongoDB query log for the inspector overlay."""
+    queries = get_recent_queries(limit=limit, session_id=session_id)
+    return {
+        "db": "workshop",
+        "cluster": get_cluster_label(),
+        "count": len(queries),
+        "queries": queries,
+    }
+
+
 class SupportChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    user_id: str | None = None
 
 
 @app.post("/api/support/chat")
 def support_chat(req: SupportChatRequest):
-    """LeafyShop product support agent — explicit Ollama tool loop with trace."""
+    """LeafyShop product support agent.
+
+    Lab: backend/agent/retrieval_starter.py ($vectorSearch) and backend/agent/tools.py
+    (catalog + memory tools). Solutions in scripts/answers/.
+    """
     if knowledge_coll is None or memories_coll is None or coll is None:
         raise HTTPException(status_code=503, detail="Database not initialized")
 
     session_id = req.session_id or str(uuid.uuid4())
+    user_id = (req.user_id or "").strip() or None
+    set_active_session(session_id)
+
+    started = datetime.now(timezone.utc)
     agent = SupportAgent(
         knowledge_coll=knowledge_coll,
         products_coll=coll,
         memories_coll=memories_coll,
+        user_profiles_coll=user_profiles_coll,
+        orders_coll=orders_coll,
+        conversations_coll=conversations_coll,
         session_id=session_id,
+        user_id=user_id,
     )
     try:
         result = agent.run(req.message)
     except ConnectionError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    reply = result.get("answer", "")
+    if not isinstance(reply, str):
+        reply = json.dumps(reply, default=str)
+    latency_ms = (datetime.now(timezone.utc) - started).total_seconds() * 1000
+    agent_trace = build_agent_trace(result.get("trace", []), latency_ms=latency_ms)
+
+    if user_id and conversations_coll is not None:
+        try:
+            persist_conversation_turn(
+                conversations_coll,
+                user_id=user_id,
+                session_id=session_id,
+                role="user",
+                content=req.message,
+            )
+            if reply:
+                persist_conversation_turn(
+                    conversations_coll,
+                    user_id=user_id,
+                    session_id=session_id,
+                    role="assistant",
+                    content=reply,
+                    trace=result.get("trace"),
+                )
+        except Exception:
+            logger.exception("Failed to persist conversation turn")
 
     tool_calls = [
         {
@@ -949,10 +1080,13 @@ def support_chat(req: SupportChatRequest):
         if t.get("kind") in {"tool_call", "tool_result"}
     ]
     return {
-        "reply": result.get("answer", ""),
+        "reply": reply,
         "session_id": session_id,
+        "user_id": user_id,
         "trace": result.get("trace", []),
+        "agent_trace": agent_trace,
         "tool_calls": tool_calls,
+        "cart_items": result.get("cart_items") or [],
     }
 
 
@@ -963,13 +1097,20 @@ def _serve_index() -> str:
     return html.replace("</head>", f"{inject}</head>", 1)
 
 
+def _index_response() -> HTMLResponse:
+    return HTMLResponse(
+        content=_serve_index(),
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"},
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 def root():
-    return _serve_index()
+    return _index_response()
 
 
 # CloudFront may rewrite `/` to `/index.html` when DefaultRootObject is set on the
 # distribution — serve the same SPA bundle for both paths so prefix-routed deployments work.
 @app.get("/index.html", response_class=HTMLResponse, include_in_schema=False)
 def index_html():
-    return _serve_index()
+    return _index_response()

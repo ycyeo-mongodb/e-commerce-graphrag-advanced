@@ -1,27 +1,32 @@
-# LeafyShop — E-Commerce GraphRAG Advanced Workshop
+# LeafyShop — RAG, GraphRAG, and Agentic AI on MongoDB
 
-Hands-on workshop repo for **LeafyShop**, a fictional e-commerce storefront powered by **MongoDB Atlas**. Build an explicit **Product Support Agent** with **Ollama** (local LLM) and MongoDB — no AWS Lambda, no LangChain, no cloud API keys required for the agent module.
+Hands-on app for engineers learning **Agentic AI**, **RAG**, and **GraphRAG** on **MongoDB Atlas**. LeafyShop is the demo vehicle (fictional store + Product Support Agent). No LangChain. No AWS Lambda required for the agent.
 
-Companion documentation portal: [graphrag_workshop](https://github.com/ycyeo-mongodb/e-commerce-graphrag-advanced) (workshop docs in `graphrag_workshop`).
+Companion portal: `graphrag_workshop/` (see `workshop_plan.md` for the curriculum).
 
-## What you'll build
+## Learning outcomes
 
-### Part 1 — Agentic AI + MongoDB (this repo, v1)
+| Outcome | What you build | MongoDB |
+|---------|----------------|---------|
+| **RAG** | `$vectorSearch` on support articles | `knowledge_base` + Atlas vector index |
+| **Agentic AI** | Explicit Ollama tool loop + memory | `user_profiles`, `orders`, `conversations`, `memories` |
+| **GraphRAG** | `$graphLookup` hybrid retrieval | `knowledge_graph` |
 
-- **LeafyShop storefront** — search, cart, and catalog UI (from the GenAI e-commerce template)
-- **Product Support Agent** — chat bubble backed by an explicit Python agent loop
-- **Four allowlisted tools**: `search_knowledge`, `get_product`, `save_memory`, `recall_memory`
-- **Educational trace** — see each tool decision and result (no hidden chain-of-thought)
-- **MongoDB collections**: `products`, `knowledge_base`, `memories`
+## What is in this repo today
 
-### Part 2 — RAG + Vector Search (planned)
+### Part 1 — RAG (labs to scaffold)
 
-- Add embeddings and Atlas Vector Search to `search_knowledge`
-- Agent loop stays unchanged — only the tool implementation changes
+- Embed `knowledge_base`, define Atlas vector index, `$vectorSearch` in `search_knowledge`
 
-### Part 3 — GraphRAG (planned)
+### Part 2 — Agentic AI + MongoDB (implemented)
 
-- Knowledge graph + `$graphLookup` + hybrid retrieval for multi-hop support questions
+- LeafyShop storefront (Hybrid RRF product search is **background**, not a lab)
+- Product Support Agent — allowlisted tools, Agent trace, Live MongoDB inspector
+- Memory layer keyed by `demo_user` (Alex, no password)
+
+### Part 3 — GraphRAG (planned labs)
+
+- Knowledge graph + `$graphLookup` + hybrid with vector search
 
 ## Quick start
 
@@ -39,9 +44,10 @@ cp .env.example .env
 ollama pull llama3.2
 
 python scripts/seed_support_data.py
+python scripts/seed_user_profile.py   # demo_user profile + sample orders + long-term memory
 # Optional: load product embeddings for search UI
-python scripts/01_load_and_embed.py
-python scripts/02_create_indexes.py
+python scripts/answers/01_load_and_embed.py
+python scripts/answers/02_create_indexes.py
 
 cd backend && uvicorn app:app --reload --port 8000
 ```
@@ -58,12 +64,24 @@ Open http://localhost:8000 — use the green chat bubble for **Product Support A
 | `OLLAMA_MODEL` | Yes (agent) | Default `llama3.2` |
 | `BEDROCK_API_URL` | No | Legacy; not used by support agent |
 
+## Memory layer (MongoDB)
+
+| Layer | Collection | What it stores |
+|-------|------------|----------------|
+| **Short-term** | `conversations` | Last N chat turns per `user_id` + `session_id` (loaded into agent context) |
+| **Session** | `memories` (`memory_scope: session`) | Notes for the current browser session |
+| **Long-term** | `memories` (`memory_scope: long_term`) | Explicit preferences the customer asks you to remember |
+| **Profile** | `user_profiles` | Sizes, interests, favorite brands, recently viewed products |
+| **Purchase history** | `orders` | Checkout history keyed by `user_id` |
+
+Workshop attendees sign in as **`demo_user`** (Alex Chen) — no password. Shop, checkout, then ask the agent for personalized recommendations.
+
 ## Example support prompts
 
 ```
 What is your returns policy?
-Which products support vector search?
-Tell me about Heritage Slip-on Athletic Sneakers
+What have I bought before?
+Recommend something based on my interests
 Remember that I prefer concise answers
 What did you remember about me?
 ```
@@ -73,15 +91,19 @@ What did you remember about me?
 ```
 backend/
   app.py                 # FastAPI — storefront + /api/support/chat
-  agent/                 # Explicit Ollama agent loop
+  catalog_browse.py      # Lab: GET /api/products (home grid + sidebar)
+  agent/
     agent.py
-    tools.py
+    tools.py             # Lab: catalog + memory tools (empty TODOs)
+    retrieval_starter.py # Lab: $vectorSearch for policy chat
     ollama_client.py
 frontend/
   index.html             # LeafyShop UI + support chat panel
 scripts/
-  seed_support_data.py   # knowledge_base + memory indexes
-  01_load_and_embed.py   # Product catalog (search workshop)
+  seed_support_data.py
+  seed_user_profile.py
+  TO-DO/                 # Ingest + index labs
+  answers/               # catalog_browse.py, tools.py, retrieval_starter.py, 01–12
 tests/
 ```
 
@@ -89,11 +111,12 @@ tests/
 
 | Checkpoint | Prompt | What to observe |
 |------------|--------|-----------------|
-| 1 | "Hello" (no DB needed) | Model can answer without tools |
-| 2 | "What is your returns policy?" | `search_knowledge` tool call in trace |
-| 3 | Product name + "remember concise answers" | `get_product` then `save_memory` |
-| 4 | "What did you remember?" | `recall_memory` returns session note |
-| 5 | Stop Ollama | Clear 503 error, no arbitrary execution |
+| 1 | Shop + add to cart + checkout | Order saved to `orders` with `user_id: demo_user` |
+| 2 | "What have I bought before?" | `get_purchase_history` tool in trace |
+| 3 | "Recommend based on my interests" | `get_user_profile` + personalized answer |
+| 4 | "Remember that I prefer concise answers" | `save_memory` → `memories` long_term |
+| 5 | "What is your returns policy?" | `search_knowledge` tool call in trace |
+| 6 | Follow-up in same session | Short-term memory from `conversations` |
 
 ## Tests
 
@@ -103,7 +126,7 @@ PYTHONPATH=backend pytest tests/ -q
 
 ## What to change next
 
-- **Vector Search**: embed `knowledge_base` chunks; swap keyword search in `search_knowledge`
+- **Vector Search**: embed `knowledge_base` chunks; `$vectorSearch` in `search_knowledge`
 - **GraphRAG**: add `knowledge_graph` collection and hybrid retrieval
 - **Azure AI Foundry**: replace `OllamaClient` with a provider interface — agent loop unchanged
 

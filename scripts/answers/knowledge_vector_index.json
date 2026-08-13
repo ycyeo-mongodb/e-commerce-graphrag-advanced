@@ -1,0 +1,14 @@
+{
+  "name": "knowledge_vector_index",
+  "type": "vectorSearch",
+  "definition": {
+    "fields": [
+      {
+        "type": "vector",
+        "path": "content_embedding",
+        "numDimensions": 1024,
+        "similarity": "cosine"
+      }
+    ]
+  }
+}

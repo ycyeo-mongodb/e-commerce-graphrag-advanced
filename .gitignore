@@ -12,3 +12,5 @@ __pycache__/
 .aws/
 *.pem
 *.key
+.query_log.json
+backend/.query_log.json

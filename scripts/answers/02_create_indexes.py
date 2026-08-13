@@ -1,5 +1,17 @@
 """
-Step 2: Create the Vector Search and Atlas Search indexes.
+Solution: create the Vector Search and Atlas Search indexes on workshop.products.
+
+Attendee lab (fill the TODOs yourself):
+    python scripts/TO-DO/02_create_indexes.py
+
+Why this index does not vectorize the whole document:
+  Creating a Vector Search index does not call Voyage. It builds an HNSW graph
+  on the float array already stored at ingest (description_embedding, produced
+  from embedding_text: name + tags + description).
+
+  type "vector"  — that one array is the only ANN field.
+  type "filter"  — category and price are facts for $vectorSearch.filter,
+                   not embeddings. Omit a path = you cannot pre-filter on it.
 """
 
 import os
@@ -17,14 +29,18 @@ coll = client["workshop"]["products"]
 vector_model = SearchIndexModel(
     definition={
         "fields": [
+            # ANN path only. Voyage already wrote this array at ingest.
+            # Creating the index does not embed name, tags, or price.
             {
                 "type": "vector",
                 "path": "description_embedding",
                 "numDimensions": 1024,
                 "similarity": "cosine",
             },
-            {"type": "filter", "path": "category"},
-            {"type": "filter", "path": "price"},
+            # Not vectors. Metadata so $vectorSearch.filter can pre-filter ANN
+            # (department equality, price range). Omit = cannot filter on it.
+            {"type": "filter", "path": "category"},  # department sidebar
+            {"type": "filter", "path": "price"},  # budget range $gte / $lte
         ]
     },
     name="vector_index",
