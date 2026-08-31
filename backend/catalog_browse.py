@@ -67,11 +67,14 @@ def _serialize(cursor) -> list[dict[str, Any]]:
 
 if __name__ == "__main__":
   import os
+  from pathlib import Path
 
   from dotenv import load_dotenv
   from pymongo import MongoClient
 
-  load_dotenv()
+  _backend = Path(__file__).resolve().parent
+  load_dotenv(_backend / ".env")
+  load_dotenv(_backend.parent / ".env")
   client = MongoClient(os.environ["MONGODB_URI"])
   coll = client["workshop"]["products"]
 

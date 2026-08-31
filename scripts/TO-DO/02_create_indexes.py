@@ -34,6 +34,8 @@ coll = client["workshop"]["products"]
 
 # Set True if Getting Started already created vector_index and you want to rebuild it.
 RECREATE = False
+# Set True after the keyword index mapping changes (e.g. adding tags).
+RECREATE_TEXT = False
 
 # ---------------------------------------------------------------------------
 # TODO 1 — Vector field
@@ -92,7 +94,8 @@ vector_model = SearchIndexModel(
     type="vectorSearch",
 )
 
-# Atlas Search (keyword / fuzzy on name + description) — provided.
+# Atlas Search (keyword / fuzzy on name + tags + description) — provided.
+# Tags matter: "GPU" is on graphics cards as a tag, not always in the name.
 # This is a different index type. Filter fields on the vector index do not
 # replace it.
 search_model = SearchIndexModel(
@@ -102,6 +105,7 @@ search_model = SearchIndexModel(
             "fields": {
                 "name": {"type": "string", "analyzer": "lucene.standard"},
                 "description": {"type": "string", "analyzer": "lucene.standard"},
+                "tags": {"type": "string", "analyzer": "lucene.standard"},
                 "category": {"type": "stringFacet"},
                 "brand": {"type": "stringFacet"},
             },
@@ -124,6 +128,11 @@ if "vector_index" in existing:
 else:
     print("Creating vector search index...")
     coll.create_search_index(vector_model)
+
+if RECREATE_TEXT and "text_search_index" in existing:
+    print("Dropping existing text_search_index so you can recreate it...")
+    coll.drop_search_index("text_search_index")
+    existing.pop("text_search_index", None)
 
 if "text_search_index" not in existing:
     print("Creating text search index...")

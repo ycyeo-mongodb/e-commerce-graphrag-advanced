@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import time
+from pathlib import Path
 from typing import Any
 
 import voyageai
@@ -21,7 +22,9 @@ from pymongo.collection import Collection
 
 from .query_log import log_aggregate
 
-load_dotenv()
+_BACKEND = Path(__file__).resolve().parents[1]
+load_dotenv(_BACKEND / ".env")
+load_dotenv(_BACKEND.parent / ".env")
 
 
 def vector_search_knowledge(

@@ -55,6 +55,7 @@ search_model = SearchIndexModel(
             "fields": {
                 "name": {"type": "string", "analyzer": "lucene.standard"},
                 "description": {"type": "string", "analyzer": "lucene.standard"},
+                "tags": {"type": "string", "analyzer": "lucene.standard"},
                 "category": {"type": "stringFacet"},
                 "brand": {"type": "stringFacet"},
             },

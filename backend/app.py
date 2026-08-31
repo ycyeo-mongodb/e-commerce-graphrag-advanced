@@ -9,6 +9,7 @@ import io
 import json
 import logging
 import os
+import re
 import threading
 import uuid
 from contextlib import asynccontextmanager
@@ -27,6 +28,12 @@ from fastapi.staticfiles import StaticFiles
 from pymongo import MongoClient
 import voyageai
 
+# Repo-root `.env` is the workshop file. Optional `backend/.env` still works.
+BACKEND_DIR = Path(__file__).resolve().parent
+FRONTEND_DIR = (BACKEND_DIR.parent / "frontend").resolve()
+load_dotenv(BACKEND_DIR / ".env")
+load_dotenv(BACKEND_DIR.parent / ".env")
+
 from agent import SupportAgent
 from agent.agent import build_agent_trace
 from agent.query_log import get_cluster_label, get_recent_queries, set_active_session
@@ -42,14 +49,8 @@ from catalog_browse import browse_products
 # Solutions: scripts/answers/catalog_browse.py, scripts/answers/tools.py,
 #            scripts/answers/retrieval_starter.py
 
-load_dotenv()
-
 logger = logging.getLogger("leafyshop")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-
-# Repo root for templates / static (`backend/` is the parent of this file)
-BACKEND_DIR = Path(__file__).resolve().parent
-FRONTEND_DIR = (BACKEND_DIR.parent / "frontend").resolve()
 
 db_client: MongoClient = None
 coll = None
@@ -185,8 +186,24 @@ RERANK_MODEL = "rerank-2.5"
 RRF_K = 60                  # reciprocal-rank-fusion constant
 HYBRID_CANDIDATES = 50      # docs pulled from each retriever before fusion
 RERANK_CANDIDATES = 30      # docs sent into the reranker after RRF
-FUZZY_MAX_EDITS = 2         # Atlas Search fuzzy: 0–2 character edits tolerated
-FUZZY_PREFIX_LEN = 1        # first N chars must match exactly (faster + safer)
+FUZZY_MAX_EDITS = 1         # Atlas Search fuzzy: short tokens must not edit into "on"/"can"
+FUZZY_PREFIX_LEN = 2        # first N chars must match exactly
+FUZZY_MIN_TERM_LEN = 4      # do not fuzzy "on", "at", "can"
+TEXT_SEARCH_PATHS = ["name", "description"]
+# Natural-language glue. lucene.standard does not strip these, so "I can … at home"
+# otherwise ranks Can-opener / Home Decor / Roll-on over GPUs.
+_TEXT_STOPWORDS = frozenset({
+    "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of",
+    "with", "from", "i", "i'm", "im", "can", "could", "would", "should", "want",
+    "need", "get", "me", "my", "we", "you", "that", "this", "it", "is", "are",
+    "be", "as", "by", "about", "into", "over", "do", "does", "did", "just",
+    "some", "any", "also", "able", "use", "using", "used",
+})
+# Catalog names say RTX / GeForce, not "GPU". Expand type words so $search can hit them.
+_TEXT_SYNONYMS = {
+    "gpu": ["graphics", "rtx", "geforce", "radeon"],
+    "gpus": ["graphics", "rtx", "geforce", "radeon"],
+}
 POPULARITY_WEIGHT = 0.2     # mild tiebreaker only (intent=none). Equal weight lets high-review noise beat GPUs.
 POPULARITY_INTENT_RE = r"\b(popular|popularity|bestseller|best[- ]?selling|top[- ]?rated|highest[- ]?rated|best[- ]?rated|highly[- ]?rated|most[- ]?loved|trending|favorite|favourite)\b"
 REVIEWS_INTENT_RE = r"\b(most[- ]?reviewed|highly[- ]?reviewed|most[- ]?reviews|reviewed)\b"
@@ -263,36 +280,58 @@ def _build_vector_pipeline(query_vector: list[float], category: Optional[str], l
     ]
 
 
+def _lexical_terms(query: str) -> list[str]:
+    """Keep content tokens for $search. Drop glue so BM25 does not rank 'home' decor."""
+    raw = [t for t in re.split(r"[^\w+]+", query.lower()) if t]
+    kept = [t for t in raw if t not in _TEXT_STOPWORDS and len(t) > 1]
+    base = kept or raw
+    expanded: list[str] = []
+    seen: set[str] = set()
+    for t in base:
+        for piece in [t, *_TEXT_SYNONYMS.get(t, [])]:
+            if piece not in seen:
+                seen.add(piece)
+                expanded.append(piece)
+    return expanded
+
+
 def _build_text_pipeline(query: str, category: Optional[str], limit: int) -> list[dict]:
-    """Build the $search compound pipeline with both an exact and a fuzzy clause.
+    """Lexical $search: exact on content terms, fuzzy only on longer tokens.
 
-    Why two clauses?
-      * `should[0]` (boosted exact text) — clean queries score highest
-      * `should[1]` (fuzzy) — `runing` still finds `running` (typo recovery)
-
-    minimumShouldMatch: a 3+ word query must match at least two tokens so a
-    stray word like "cards" in a belt description cannot win the text retriever.
+    Product type words like GPU often live in tags, not the title. Until
+    text_search_index maps tags, expand GPU → RTX / GeForce so name search hits.
+    Fuzzy is limited to terms with length >= FUZZY_MIN_TERM_LEN so maxEdits cannot
+    turn 'on'/'can' into Roll-on / Can-opener.
     """
-    fuzzy_cfg = {"maxEdits": FUZZY_MAX_EDITS, "prefixLength": FUZZY_PREFIX_LEN}
-    n_terms = len([t for t in query.split() if t])
+    terms = _lexical_terms(query)
+    joined = " ".join(terms) if terms else query
+    fuzzy_terms = [t for t in terms if len(t) >= FUZZY_MIN_TERM_LEN]
+    should: list[dict] = [
+        {
+            "text": {
+                "query": joined,
+                "path": "name",
+                "score": {"boost": {"value": 3}},
+            }
+        },
+        {
+            "text": {
+                "query": joined,
+                "path": "description",
+            }
+        },
+    ]
+    if fuzzy_terms:
+        should.append({
+            "text": {
+                "query": " ".join(fuzzy_terms),
+                "path": TEXT_SEARCH_PATHS,
+                "fuzzy": {"maxEdits": FUZZY_MAX_EDITS, "prefixLength": FUZZY_PREFIX_LEN},
+            }
+        })
     compound: dict = {
-        "should": [
-            {
-                "text": {
-                    "query": query,
-                    "path": ["name", "description"],
-                    "score": {"boost": {"value": 3}},
-                }
-            },
-            {
-                "text": {
-                    "query": query,
-                    "path": ["name", "description"],
-                    "fuzzy": fuzzy_cfg,
-                }
-            },
-        ],
-        "minimumShouldMatch": 2 if n_terms >= 3 else 1,
+        "should": should,
+        "minimumShouldMatch": 1,
     }
     if category:
         compound["filter"] = [{"text": {"query": category, "path": "category"}}]
@@ -581,8 +620,9 @@ def hybrid_search(query: str, category: Optional[str], limit: int, k: int = RRF_
                 {
                     "name": "Retriever B — $search (exact + fuzzy)",
                     "detail": (
-                        f"Top {HYBRID_CANDIDATES} candidates from Atlas Search; "
-                        f"fuzzy maxEdits={FUZZY_MAX_EDITS}, prefixLength={FUZZY_PREFIX_LEN}"
+                        f"Top {HYBRID_CANDIDATES} candidates from Atlas Search on "
+                        f"name + description; stopwords stripped; fuzzy only on terms "
+                        f"≥{FUZZY_MIN_TERM_LEN} chars (maxEdits={FUZZY_MAX_EDITS})"
                     ),
                     "fuzzy": {"maxEdits": FUZZY_MAX_EDITS, "prefixLength": FUZZY_PREFIX_LEN},
                     "pipeline": text_pipeline,
