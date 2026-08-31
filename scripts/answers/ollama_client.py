@@ -1,7 +1,6 @@
-"""Thin Ollama chat client for structured JSON agent decisions.
+"""Solution: Ollama chat client + system prompt.
 
-Part 2 lab: fill MEMORY_TOOL_INSTRUCTIONS. Solution: scripts/answers/ollama_client.py
-The HTTP call in OllamaClient.decide is provided — you invoke it from agent.py.
+Drop-in for backend/agent/ollama_client.py (attendee lab fills MEMORY_TOOL_INSTRUCTIONS).
 """
 
 from __future__ import annotations
@@ -16,20 +15,27 @@ from .config import AgentSettings
 
 logger = logging.getLogger(__name__)
 
-# TODO (Part 2 — The System Prompt)
-# Tell llama3.2 WHEN to call the MongoDB memory tools.
-# Catalog / RAG routing above this block is already written — do not delete it.
-#
-# Hints (see the portal Exercise tab for more):
-#   "remember that I prefer…"     → save_memory
-#   "what do you know about me?"  → recall_memory
-#   sizes / interests / profile   → get_user_profile
-#   "what have I bought?"         → get_purchase_history
-#   spend by category             → summarize_purchase_history
-#
-# Also list those five tools with their arguments, same style as search_knowledge.
-# Stuck? scripts/answers/ollama_client.py
+# Filled memory routing — attendees write this block in the lab.
 MEMORY_TOOL_INSTRUCTIONS = """
+- remember / save a preference / "remember that I…" → save_memory
+  Default memory_scope is long_term. Use session only if they say this chat / this session.
+- "what do you know about me" / recall saved notes → recall_memory
+- profile, sizes, interests, recently viewed → get_user_profile
+- "what have I bought" / past orders → get_purchase_history
+- "what categories do I spend the most on" / spend by category → summarize_purchase_history
+
+Memory tools (MongoDB — you never query Atlas yourself):
+- get_user_profile() — shopper profile, sizes, interests, recently viewed
+- get_purchase_history(limit: int = 5) — recent orders
+- summarize_purchase_history() — spend by category ($group on order items)
+- save_memory(note: str, memory_scope: "long_term" | "session") — persist a preference
+- recall_memory() — session notes + long-term memories for this shopper
+
+Example — customer: "Remember that I prefer concise answers"
+{"type": "tool_call", "tool": "save_memory", "arguments": {"note": "prefers concise answers", "memory_scope": "long_term"}}
+
+Example — customer: "What do you know about me?"
+{"type": "tool_call", "tool": "recall_memory", "arguments": {}}
 """
 
 SYSTEM_PROMPT = """You are the LeafyShop Product Support Agent.
@@ -92,10 +98,7 @@ class OllamaClient:
     self.settings = settings
 
   def decide(self, messages: list[dict[str, str]]) -> dict[str, Any]:
-    """Ask Ollama for the next agent decision as JSON.
-
-    The agent loop in agent.py calls this. You do not change the HTTP shape.
-    """
+    """Ask Ollama for the next agent decision as JSON."""
     url = f"{self.settings.ollama_host}/api/chat"
     payload = {
       "model": self.settings.ollama_model,

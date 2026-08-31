@@ -1,6 +1,7 @@
 """Allowlisted tools for the LeafyShop support agent.
 
-Fill the TODOs (MongoDB queries). Solution: scripts/answers/tools.py
+Part 2 lab: fill the MongoDB bodies (save_memory, recall_memory,
+summarize_purchase_history, plus profile / orders). Solution: scripts/answers/tools.py
 
 search_knowledge is already wired to retrieval_starter.py — fill that file in the RAG lab.
 """
