@@ -3,7 +3,8 @@
 Part 2 lab: fill the MongoDB bodies (save_memory, recall_memory,
 summarize_purchase_history, plus profile / orders). Solution: scripts/answers/tools.py
 
-search_knowledge is already wired to retrieval_starter.py — fill that file in the RAG lab.
+get_product is provided (Atlas Search + price sort). search_knowledge is already wired
+to retrieval_starter.py — fill that file in the RAG lab.
 """
 
 from __future__ import annotations
@@ -39,6 +40,20 @@ MEMORY_SCOPE_LONG_TERM = "long_term"
 PRODUCT_TEXT_INDEX = "text_search_index"
 CATALOG_SEARCH_LIMIT = 5
 
+_STOP_WORDS = frozenset({
+  "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+  "what", "how", "do", "does", "did", "can", "could", "would", "should",
+  "your", "my", "i", "me", "we", "our", "you", "they", "their", "it", "its",
+  "about", "for", "on", "in", "to", "of", "and", "or", "tell", "please",
+  "have", "has", "had", "get", "give", "know", "like", "want", "need",
+})
+
+_CATALOG_NOISE = _STOP_WORDS | frozenset({
+  "most", "least", "expensive", "cheapest", "cheap", "highest", "lowest",
+  "price", "priced", "cost", "available", "leafyshop", "shop", "now",
+  "current", "currently", "best", "top", "whats", "what's",
+})
+
 _PRICE_DESC = re.compile(
   r"\b(most expensive|expensive|highest|priciest|premium|flagship)\b",
   re.IGNORECASE,
@@ -47,6 +62,13 @@ _PRICE_ASC = re.compile(
   r"\b(cheapest|least expensive|lowest|affordable|budget|inexpensive)\b",
   re.IGNORECASE,
 )
+
+
+def _catalog_search_query(raw: str) -> str:
+  """Drop ranking chatter so Atlas Search matches 'graphics card', not 'most expensive'."""
+  words = re.findall(r"[a-z0-9]+", raw.lower())
+  keep = [w for w in words if w not in _CATALOG_NOISE and len(w) >= 2]
+  return " ".join(keep) or raw.strip()
 
 
 def _price_sort_direction(raw: str) -> int | None:
@@ -95,17 +117,247 @@ def search_knowledge(knowledge_coll: Collection, query: str, *, max_chars: int) 
   return {"matches": matches, "count": len(matches), "mode": "vector"}
 
 
-def get_product(products_coll: Collection, product_name: str, *, max_chars: int) -> dict[str, Any]:
-  """TODO: Atlas $search on workshop.products (text_search_index). Always return price.
+def _product_card(doc: dict[str, Any], *, max_chars: int) -> dict[str, Any]:
+  """Catalog fields the agent is allowed to quote — always includes price."""
+  card: dict[str, Any] = {
+    "name": doc.get("name"),
+    "price": doc.get("price"),
+    "category": doc.get("category"),
+    "subcategory": doc.get("subcategory"),
+    "brand": doc.get("brand"),
+    "in_stock": doc.get("in_stock"),
+    "tags": doc.get("tags") or [],
+    "spec_highlights": doc.get("spec_highlights") or [],
+    "specs": doc.get("specs") or {},
+  }
+  if doc.get("description"):
+    card["description"] = _truncate(str(doc["description"]), max_chars)
+  return card
 
-  Solution: scripts/answers/tools.py
+
+def _catalog_find_fallback(
+  products_coll: Collection,
+  query: str,
+  *,
+  projection: dict[str, Any],
+  limit: int,
+) -> list[dict[str, Any]]:
+  """Substring match on name / tags / description when $search misses (e.g. '5090')."""
+  rx = re.compile(re.escape(query), re.IGNORECASE)
+  filter_doc = {"$or": [{"name": rx}, {"tags": rx}, {"description": rx}]}
+  log_filter = {
+    "$or": [
+      {"name": {"$regex": query, "$options": "i"}},
+      {"tags": {"$regex": query, "$options": "i"}},
+      {"description": {"$regex": query, "$options": "i"}},
+    ]
+  }
+  t0 = time.perf_counter()
+  docs = list(products_coll.find(filter_doc, projection).limit(limit))
+  log_find(
+    "products",
+    log_filter,
+    label=f"Catalog find — {query}",
+    projection=projection,
+    limit=limit,
+    latency_ms=(time.perf_counter() - t0) * 1000,
+    result_count=len(docs),
+  )
+  return docs
+
+
+def _catalog_by_price(
+  products_coll: Collection,
+  query: str,
+  *,
+  projection: dict[str, Any],
+  limit: int,
+  direction: int,
+) -> list[dict[str, Any]]:
+  """Find catalog matches and sort by price. Atlas Search cannot sort on price
+  until `price` is a number field on text_search_index."""
+  terms = [t for t in re.findall(r"[a-z0-9]+", query.lower()) if len(t) >= 3]
+  if any(t in {"graphics", "gpu", "gpus"} for t in terms):
+    terms = [t for t in terms if t not in {"card", "cards"}]
+  if not terms:
+    return []
+  or_clauses: list[dict[str, Any]] = []
+  log_clauses: list[dict[str, Any]] = []
+  for term in terms:
+    rx = re.compile(re.escape(term), re.IGNORECASE)
+    or_clauses.extend([
+      {"name": rx},
+      {"subcategory": rx},
+      {"tags": rx},
+      {"category": rx},
+    ])
+    log_clauses.extend([
+      {"name": {"$regex": term, "$options": "i"}},
+      {"subcategory": {"$regex": term, "$options": "i"}},
+      {"tags": {"$regex": term, "$options": "i"}},
+      {"category": {"$regex": term, "$options": "i"}},
+    ])
+  filter_doc = {"$or": or_clauses}
+  sort_spec = [("price", direction)]
+  t0 = time.perf_counter()
+  docs = list(products_coll.find(filter_doc, projection).sort(sort_spec).limit(limit))
+  log_find(
+    "products",
+    {"$or": log_clauses},
+    label=f"Catalog by price — {query}",
+    projection=projection,
+    sort=sort_spec,
+    limit=limit,
+    latency_ms=(time.perf_counter() - t0) * 1000,
+    result_count=len(docs),
+  )
+  return docs
+
+
+def _dedupe_products(docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+  seen: set[str] = set()
+  out: list[dict[str, Any]] = []
+  for doc in docs:
+    key = str(doc.get("name") or "")
+    if not key or key in seen:
+      continue
+    seen.add(key)
+    out.append(doc)
+  return out
+
+
+def get_product(products_coll: Collection, product_name: str, *, max_chars: int) -> dict[str, Any]:
+  """Search workshop.products with Atlas Search ($search on text_search_index).
+
+  Price questions (most expensive / cheapest) also sort MongoDB `price`.
   """
   raw = product_name.strip()[:200]
   if not raw:
-    return {"found": False, "product": None, "matches": [], "count": 0, "mode": "todo"}
-  # TODO: $search on PRODUCT_TEXT_INDEX, path name + description, limit CATALOG_SEARCH_LIMIT.
-  # TODO: if the shopper asked "most expensive" / "cheapest", sort by the price field.
-  return {"found": False, "product": None, "matches": [], "count": 0, "mode": "todo"}
+    return {"found": False, "product": None, "matches": [], "count": 0, "mode": "atlas_search"}
+
+  search_query = _catalog_search_query(raw)
+  price_dir = _price_sort_direction(raw)
+  find_projection = {
+    "_id": 0,
+    "name": 1,
+    "category": 1,
+    "subcategory": 1,
+    "description": 1,
+    "price": 1,
+    "brand": 1,
+    "in_stock": 1,
+    "tags": 1,
+    "spec_highlights": 1,
+    "specs": 1,
+  }
+  search_projection = {**find_projection, "score": {"$meta": "searchScore"}}
+  atlas_limit = 25 if price_dir is not None else CATALOG_SEARCH_LIMIT
+  pipeline = [
+    {
+      "$search": {
+        "index": PRODUCT_TEXT_INDEX,
+        "compound": {
+          "should": [
+            {
+              "text": {
+                "query": search_query,
+                "path": "name",
+                "score": {"boost": {"value": 5}},
+              }
+            },
+            {
+              "text": {
+                "query": search_query,
+                "path": "name",
+                "fuzzy": {"maxEdits": 1, "prefixLength": 2},
+              }
+            },
+            {
+              "text": {
+                "query": search_query,
+                "path": "description",
+                "score": {"boost": {"value": 1}},
+              }
+            },
+          ],
+          "minimumShouldMatch": 1,
+        },
+      }
+    },
+    {"$limit": atlas_limit},
+    {"$project": search_projection},
+  ]
+
+  t0 = time.perf_counter()
+  try:
+    atlas_docs = list(products_coll.aggregate(pipeline))
+  except Exception:  # noqa: BLE001 — fall back to find() if the search index is missing
+    atlas_docs = []
+  log_aggregate(
+    "products",
+    pipeline,
+    label=f"Atlas Search — {search_query}",
+    latency_ms=(time.perf_counter() - t0) * 1000,
+    result_count=len(atlas_docs),
+  )
+
+  gpu_query = bool(re.search(r"\b(graphics|gpu|gpus|rtx|radeon|geforce)\b", f"{raw} {search_query}", re.I))
+  if gpu_query and atlas_docs:
+    gpu_hits = []
+    for doc in atlas_docs:
+      blob = " ".join([
+        str(doc.get("subcategory") or ""),
+        str(doc.get("category") or ""),
+        str(doc.get("name") or ""),
+        " ".join(str(t) for t in (doc.get("tags") or [])),
+      ]).lower()
+      if any(tok in blob for tok in ("graphics", "gpu", "rtx", "geforce", "radeon")):
+        gpu_hits.append(doc)
+    if gpu_hits:
+      atlas_docs = gpu_hits
+
+  docs = list(atlas_docs)
+  mode = "atlas_search"
+  if price_dir is not None:
+    priced = _catalog_by_price(
+      products_coll,
+      search_query,
+      projection=find_projection,
+      limit=CATALOG_SEARCH_LIMIT,
+      direction=price_dir,
+    )
+    if priced:
+      docs = priced
+      mode = "atlas_search+price_sort"
+    elif atlas_docs:
+      docs = sorted(
+        atlas_docs,
+        key=lambda d: float(d.get("price") or 0),
+        reverse=(price_dir < 0),
+      )
+      mode = "atlas_search+price_sort"
+  if not docs:
+    docs = _catalog_find_fallback(
+      products_coll,
+      search_query,
+      projection=find_projection,
+      limit=CATALOG_SEARCH_LIMIT,
+    )
+    if docs:
+      mode = "find"
+
+  docs = _dedupe_products(docs)[:CATALOG_SEARCH_LIMIT]
+  if not docs:
+    return {"found": False, "product": None, "matches": [], "count": 0, "mode": mode}
+
+  matches = [_product_card(doc, max_chars=max_chars) for doc in docs]
+  return {
+    "found": True,
+    "product": matches[0],
+    "matches": matches,
+    "count": len(matches),
+    "mode": mode,
+  }
 
 
 def compare_products(

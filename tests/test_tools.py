@@ -1,14 +1,13 @@
-"""Tests for LeafyShop support agent tools (attendee lab stubs).
+"""Tests for LeafyShop support agent tools.
 
-Filled implementations: scripts/answers/tools.py
+Memory / profile / orders bodies stay empty until the Part 2 lab.
+get_product is provided (Atlas Search + price sort).
 """
 
 from unittest.mock import MagicMock, patch
 
 from agent.tools import (
   ALLOWED_TOOLS,
-  add_to_cart,
-  compare_products,
   enrich_product_query,
   get_product,
   get_purchase_history,
@@ -74,16 +73,50 @@ def test_search_knowledge_natural_language_query(mock_vs):
 
 def test_lab_tools_are_empty_until_filled():
   coll = MagicMock()
-  assert get_product(coll, "rtx 5090", max_chars=500)["found"] is False
   assert get_user_profile(coll, "demo_user")["found"] is False
   assert get_purchase_history(coll, "demo_user")["count"] == 0
   assert summarize_purchase_history(coll, "demo_user")["count"] == 0
   assert recall_memory(coll, session_id="s", user_id="demo_user")["count"] == 0
-  assert add_to_cart(coll, "rtx 5090", max_chars=500)["added"] is False
-  assert compare_products(coll, "a", "b", max_chars=500)["compared"] is False
   coll.aggregate.assert_not_called()
   coll.find.assert_not_called()
   coll.find_one.assert_not_called()
+
+
+def test_get_product_returns_catalog_price():
+  coll = MagicMock()
+  coll.aggregate.return_value = [
+    {
+      "name": "NVIDIA GeForce RTX 5090",
+      "price": 1999,
+      "category": "Components",
+      "subcategory": "Graphics Cards",
+      "tags": ["gpu", "rtx"],
+    }
+  ]
+  coll.find.return_value.sort.return_value.limit.return_value = []
+  coll.find.return_value.limit.return_value = []
+  result = get_product(coll, "rtx 5090", max_chars=500)
+  assert result["found"] is True
+  assert result["product"]["price"] == 1999
+  coll.aggregate.assert_called()
+
+
+def test_get_product_sorts_most_expensive_gpu():
+  coll = MagicMock()
+  coll.aggregate.return_value = []
+  coll.find.return_value.sort.return_value.limit.return_value = [
+    {
+      "name": "NVIDIA GeForce RTX 5090",
+      "price": 2499,
+      "category": "Components",
+      "subcategory": "Graphics Cards",
+      "tags": ["gpu"],
+    }
+  ]
+  result = get_product(coll, "most expensive graphics card", max_chars=500)
+  assert result["found"] is True
+  assert result["product"]["name"] == "NVIDIA GeForce RTX 5090"
+  assert result["mode"] == "atlas_search+price_sort"
 
 
 def test_persist_conversation_accepts_non_string():
