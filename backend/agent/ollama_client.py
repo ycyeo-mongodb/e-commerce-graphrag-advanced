@@ -29,7 +29,10 @@ logger = logging.getLogger(__name__)
 #
 # Also list those five tools with their arguments, same style as search_knowledge.
 # Stuck? scripts/answers/ollama_client.py
+#
+# Type BETWEEN these triple quotes. The # comments above do not print.
 MEMORY_TOOL_INSTRUCTIONS = """
+???
 """
 
 SYSTEM_PROMPT = """You are the LeafyShop Product Support Agent.
