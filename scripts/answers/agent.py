@@ -30,14 +30,43 @@ UNGROUNDED_RETRY = (
   'search_knowledge with arguments {"query": "<the customer question>"}. '
   "For products, GPUs, model numbers (5090), prices, or 'most expensive' use "
   'get_product with arguments {"product_name": "<name, model, or category>"}. '
+  "If they asked you to remember a preference, call save_memory. "
+  'If they asked what you know about them, call recall_memory. '
+  "If they asked what they spend on, call summarize_purchase_history. "
   "Quote the price from the tool result. Do not invent restocking fees or prices."
 )
 
 EMPTY_KNOWLEDGE_RETRY = (
   "search_knowledge returned 0 articles. That tool only searches support policies, not the catalog. "
   "If the customer asked about products, GPUs, or prices, call get_product next with "
-  'arguments {"product_name": "<copy the customer question, e.g. most expensive graphics card>"}.'
+  'arguments {"product_name": "<copy the customer question, e.g. most expensive graphics card>"}. '
+  "If they asked about themselves, a preference to remember, or spend by category, "
+  "do not retry search_knowledge — call recall_memory, save_memory, or summarize_purchase_history."
 )
+
+_SHOPPER_MEMORY_QUESTION = re.compile(
+  r"remember that|"
+  r"what do you know about me|"
+  r"what have i bought|"
+  r"spend the most|"
+  r"categories do i spend",
+  re.IGNORECASE,
+)
+
+_NOT_FOR_SHOPPER_MEMORY = frozenset({"search_knowledge", "get_product", "compare_products"})
+
+WRONG_MEMORY_TOOL = (
+  "Wrong tool. That question is about THIS shopper, not LeafyShop policy or the catalog. "
+  "If they asked you to remember a preference, call save_memory with "
+  'arguments {"note": "<the preference>", "memory_scope": "long_term"}. '
+  'If they asked what you know about them, call recall_memory with arguments {}. '
+  "If they asked what they spend on, call summarize_purchase_history. "
+  "Do not call search_knowledge or get_product."
+)
+
+
+def is_shopper_memory_question(user_message: str) -> bool:
+  return bool(_SHOPPER_MEMORY_QUESTION.search(user_message or ""))
 
 
 def should_reject_ungrounded_final(
@@ -164,6 +193,12 @@ class SupportAgent:
       if tool_name not in ALLOWED_TOOLS:
         self._trace(step, "error", tool=tool_name, summary="unknown tool rejected")
         return self._reply("I tried to use a tool that is not allowed. Please try again.")
+
+      if is_shopper_memory_question(message) and tool_name in _NOT_FOR_SHOPPER_MEMORY:
+        logger.info("Rejecting %s on shopper-memory question", tool_name)
+        self._trace(step, "error", tool=tool_name, summary="rejected — use a memory tool")
+        messages.append({"role": "user", "content": WRONG_MEMORY_TOOL})
+        continue
 
       arguments = decision.get("arguments", {})
       if tool_name == "get_product":

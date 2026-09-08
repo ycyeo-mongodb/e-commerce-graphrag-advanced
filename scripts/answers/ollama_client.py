@@ -38,6 +38,15 @@ Example — customer: "What do you know about me?"
 {"type": "tool_call", "tool": "recall_memory", "arguments": {}}
 """
 
+
+def _memory_instructions_block(raw: str) -> str:
+  """Skip the lab placeholder so llama3.2 does not treat ??? as routing."""
+  text = (raw or "").strip()
+  if not text or text == "???":
+    return ""
+  return "\n" + text + "\n"
+
+
 SYSTEM_PROMPT = """You are the LeafyShop Product Support Agent.
 
 LeafyShop policies, prices, and catalog facts live in MongoDB. Your training data is not LeafyShop.
@@ -49,13 +58,19 @@ On the first turn of a customer question you MUST return a tool_call. Do not ret
   Never call search_knowledge for catalog or price questions.
 - compare two named products → compare_products
 - add to cart → add_to_cart
-""" + MEMORY_TOOL_INSTRUCTIONS + """
+Never call search_knowledge for remember / "what do you know about me" / this shopper's orders / spend by category.
+""" + _memory_instructions_block(MEMORY_TOOL_INSTRUCTIONS) + """
 
 Allowed tools:
 - search_knowledge(query: str) — support articles and policies only (not the product catalog)
 - get_product(product_name: str) — Atlas Search on workshop.products. Use for names, model numbers, and "most expensive graphics card". Returns real MongoDB prices. Never invent a price.
 - compare_products(product_a: str, product_b: str) — compare two catalog products (price, specs). Use this instead of calling get_product twice.
 - add_to_cart(product_name: str) — add a catalog product to the shopper's LeafyShop cart
+- get_user_profile() — this shopper's sizes, interests, recently viewed
+- get_purchase_history(limit: int = 5) — this shopper's recent orders
+- summarize_purchase_history() — this shopper's spend by category
+- save_memory(note: str, memory_scope: "long_term" | "session") — persist a preference. Default long_term.
+- recall_memory() — session notes + long-term memories for this shopper
 
 When the customer asks to add something to their cart, call add_to_cart with the product name (use get_product first only if you need to confirm the exact name). Then give a short confirmation. Do not call search_knowledge for cart actions.
 When the customer asks to compare two products, call compare_products once with both names. Summarize the differences in prose.
@@ -71,6 +86,15 @@ Example — customer: "How much is the 5090?"
 Example — customer: "whats the most expensive graphics card in leafyshop now?"
 {"type": "tool_call", "tool": "get_product", "arguments": {"product_name": "most expensive graphics card"}}
 
+Example — customer: "Remember that I prefer concise answers."
+{"type": "tool_call", "tool": "save_memory", "arguments": {"note": "prefers concise answers", "memory_scope": "long_term"}}
+
+Example — customer: "What do you know about me?"
+{"type": "tool_call", "tool": "recall_memory", "arguments": {}}
+
+Example — customer: "What categories do I spend the most on?"
+{"type": "tool_call", "tool": "summarize_purchase_history", "arguments": {}}
+
 Never create arbitrary queries or code.
 Return only valid JSON with no markdown fences.
 
@@ -85,7 +109,20 @@ DECISION_SCHEMA = {
   "type": "object",
   "properties": {
     "type": {"type": "string", "enum": ["tool_call", "final"]},
-    "tool": {"type": "string"},
+    "tool": {
+      "type": "string",
+      "enum": [
+        "search_knowledge",
+        "get_product",
+        "compare_products",
+        "add_to_cart",
+        "get_user_profile",
+        "get_purchase_history",
+        "summarize_purchase_history",
+        "save_memory",
+        "recall_memory",
+      ],
+    },
     "arguments": {"type": "object"},
     "answer": {"type": "string"},
   },
