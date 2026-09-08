@@ -1,14 +1,14 @@
 """
-Solution: load the product catalog and generate embeddings with Voyage AI.
-Inserts all products with embeddings into MongoDB Atlas.
+Solution: the TO-DO lab with the three TODOs filled. Same file, same loop.
 
-Vectorise meaning; filter on facts: one embedding_text string (name + tags +
-description) → one Voyage vector on description_embedding. Category and price
-are not in that string — they are Vector Search filter fields.
-
-Attendee lab (fill the TODOs yourself):
     python scripts/TO-DO/01_load_and_embed.py
+
+This script loads backend/data/products.json, builds one text string per
+product (name + tags + description — not price or category), embeds that
+string, and inserts into workshop.products. Running it replaces that collection.
 """
+
+from __future__ import annotations
 
 import json
 import os
@@ -20,34 +20,47 @@ from pymongo import MongoClient
 
 load_dotenv()
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+CATALOG_PATH = REPO_ROOT / "backend" / "data" / "products.json"
+
 client = MongoClient(os.environ["MONGODB_URI"])
 coll = client["workshop"]["products"]
 vo = voyageai.Client(api_key=os.environ["VOYAGE_API_KEY"])
 
-# Load the product catalog
-with open(Path(__file__).resolve().parents[2] / "backend" / "data" / "products.json") as f:
+with open(CATALOG_PATH) as f:
     products = json.load(f)
 
 print(f"Loaded {len(products)} products")
 print(f"Categories: {sorted(set(p['category'] for p in products))}")
 
-def embedding_text(product: dict) -> str:
-    """Vectorise meaning; filter on facts.
+# ---------------------------------------------------------------------------
+# TODO 1 — Build the embedding string (not a MongoDB query)
+# Voyage encodes one STRING per product. Concatenate meaning-bearing fields.
+# Join tags into text. Leave price and category out — those are filters (lab 00).
+# $vectorSearch still returns the whole document, so you do not embed price
+# in order to show price later.
+# ---------------------------------------------------------------------------
+texts: list[str] = []
+for p in products:
+    name = p["name"]
+    tags = ", ".join(p.get("tags", []) or [])
+    description = p["description"]
+    embedding_text = f"{name}. {tags}. {description}"
+    texts.append(embedding_text)
 
-    One string → one Voyage vector. Include natural-language fields shoppers
-    actually type (name, tags, description). Leave facts out (price, category,
-    ids, stock) — those belong on the Vector Search index as filter paths.
-    """
-    name = (product.get("name") or "").strip()
-    subcategory = (product.get("subcategory") or "").strip()
-    tags = ", ".join(str(t) for t in (product.get("tags") or []) if t)
-    highlights = ", ".join(str(h) for h in (product.get("spec_highlights") or []) if h)
-    description = (product.get("description") or "").strip()
-    parts = [p for p in (name, subcategory, tags, highlights, description) if p]
-    return ". ".join(parts)
+if len(texts) != len(products):
+    raise SystemExit(
+        "TODO 1 incomplete: texts must have one string per product "
+        f"(got {len(texts)}, expected {len(products)})."
+    )
 
-
-texts = [embedding_text(p) for p in products]
+# ---------------------------------------------------------------------------
+# TODO 2 — Call Voyage AI
+# Model:      voyage-4-large
+# input_type: "document"   (this is ingest; use "query" only at search time)
+# Batch size 128 stays under typical rate limits.
+# Each result.embeddings[i] is a 1,024-float vector.
+# ---------------------------------------------------------------------------
 batch_size = 128
 all_embeddings: list[list[float]] = []
 
@@ -57,19 +70,34 @@ for i in range(0, len(texts), batch_size):
     all_embeddings.extend(result.embeddings)
     print(f"  Embedded batch {i // batch_size + 1} ({len(all_embeddings)}/{len(texts)})")
 
-for product, text, embedding in zip(products, texts, all_embeddings):
-    product["embedding_text"] = text
-    product["description_embedding"] = embedding
+if len(all_embeddings) != len(products):
+    raise SystemExit(
+        "TODO 2 incomplete: expected one embedding per product "
+        f"(got {len(all_embeddings)}, expected {len(products)})."
+    )
 
 print(f"Generated {len(all_embeddings)} embeddings of {len(all_embeddings[0])} dimensions")
 
-# Insert into MongoDB
+# ---------------------------------------------------------------------------
+# TODO 3 — Store the vector on the MongoDB document
+# The Atlas Vector Search index path is description_embedding — the field
+# name on the document must match.
+# ---------------------------------------------------------------------------
+for product, embedding in zip(products, all_embeddings):
+    product["description_embedding"] = embedding
+
+# Insert into MongoDB (replaces the collection)
 coll.delete_many({})
 result = coll.insert_many(products)
 print(f"Inserted {len(result.inserted_ids)} products into workshop.products")
 
-# Verify
 print(f"\nTotal products: {coll.count_documents({})}")
+sample = coll.find_one({"name": {"$regex": "RTX 5090", "$options": "i"}})
+if sample and isinstance(sample.get("description_embedding"), list):
+    print(f"  RTX 5090 embedding length: {len(sample['description_embedding'])}")
+else:
+    print("  Warning: RTX 5090 is missing description_embedding — check TODO 3.")
+
 pipeline = [{"$group": {"_id": "$category", "count": {"$sum": 1}}}]
 for doc in coll.aggregate(pipeline):
     print(f"  {doc['_id']}: {doc['count']}")
