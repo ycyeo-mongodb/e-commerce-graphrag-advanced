@@ -8,6 +8,8 @@ from unittest.mock import MagicMock, patch
 
 from agent.tools import (
   ALLOWED_TOOLS,
+  add_to_cart,
+  compare_products,
   enrich_product_query,
   get_product,
   get_purchase_history,
@@ -117,6 +119,22 @@ def test_get_product_sorts_most_expensive_gpu():
   assert result["found"] is True
   assert result["product"]["name"] == "NVIDIA GeForce RTX 5090"
   assert result["mode"] == "atlas_search+price_sort"
+
+
+def test_add_to_cart_and_compare_use_get_product():
+  coll = MagicMock()
+  coll.aggregate.side_effect = [
+    [{"name": "RTX 5090", "price": 1999, "category": "GPUs", "brand": "NVIDIA", "tags": ["gpu"]}],
+    [{"name": "RTX 5080", "price": 999, "category": "GPUs", "brand": "NVIDIA", "tags": ["gpu"]}],
+    [{"name": "RTX 5090", "price": 1999, "category": "GPUs", "brand": "NVIDIA", "tags": ["gpu"]}],
+  ]
+  coll.find.return_value.sort.return_value.limit.return_value = []
+  coll.find.return_value.limit.return_value = []
+  compared = compare_products(coll, "5090", "5080", max_chars=500)
+  assert compared["compared"] is True
+  cart = add_to_cart(coll, "5090", max_chars=500)
+  assert cart["added"] is True
+  assert cart["item"]["name"] == "RTX 5090"
 
 
 def test_persist_conversation_accepts_non_string():
