@@ -1,7 +1,7 @@
 """
 LAB: create an Atlas Vector Search index on workshop.products.
 
-Fill the TODOs below, then from the repo root:
+Fill the ??? in vector_fields below, then from the repo root:
 
     python scripts/TO-DO/02_create_indexes.py
 
@@ -32,34 +32,46 @@ load_dotenv()
 client = MongoClient(os.environ["MONGODB_URI"])
 coll = client["workshop"]["products"]
 
-# Set True if Getting Started already created vector_index and you want to rebuild it.
+# Set True if vector_index already exists and you want to rebuild it.
 RECREATE = False
 # Set True after the keyword index mapping changes (e.g. adding tags).
 RECREATE_TEXT = False
 
 # ---------------------------------------------------------------------------
-# TODO 1 — Vector field
-# path must be the field name you stored the embedding array on in 01_load_and_embed.py
-# numDimensions must match voyage-4-large (1024)
-# similarity: "cosine" (Voyage retrieval)
+# TODO 1 — Vector field (replace every ???)
+# path           = the field you stored the embedding array on in 01
+# numDimensions  = voyage-4-large (length of that array)
+# similarity     = Voyage retrieval
 # ---------------------------------------------------------------------------
-# TODO 2 — Filter fields
-# Add one {"type": "filter", "path": "..."} per metadata field you will pass
-# to $vectorSearch.filter. The LeafyShop sidebar filters by category.
-# Price is a numeric range ($gte / $lte). Do not add name or description.
+# TODO 2 — Filter fields (replace every ???)
+# One {"type": "filter", "path": "..."} per metadata field you will pass to
+# $vectorSearch.filter. Sidebar = department. Price = numeric $gte / $lte.
+# Do not add name or description.
 # ---------------------------------------------------------------------------
 vector_fields: list[dict] = [
-    # TODO: append the vector field dict, then the filter field dicts
+    {
+        "type": "???",              # TODO 1 — "vector"
+        "path": "???",              # TODO 1 — field that stores the embedding array
+        "numDimensions": 0,        # TODO 1 — length of that array
+        "similarity": "???",        # TODO 1 — Voyage retrieval
+    },
+    {"type": "filter", "path": "???"},  # TODO 2 — department sidebar
+    {"type": "filter", "path": "???"},  # TODO 2 — budget $gte / $lte
 ]
 
 
 def _require_vector_definition(fields: list[dict]) -> None:
+    if any(v in ("???", 0) for f in fields for v in f.values()):
+        raise SystemExit(
+            "Fill the ??? in vector_fields (TODO 1 and TODO 2) before running."
+        )
+
     vectors = [f for f in fields if f.get("type") == "vector"]
     filters = [f for f in fields if f.get("type") == "filter"]
     filter_paths = {f.get("path") for f in filters}
 
     if not vectors:
-        raise SystemExit("TODO 1 incomplete: add a field with type 'vector'.")
+        raise SystemExit("TODO 1 incomplete: type must be 'vector'.")
     vec = vectors[0]
     if vec.get("path") != "description_embedding":
         raise SystemExit("TODO 1: path must be 'description_embedding' (the field you stored).")

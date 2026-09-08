@@ -1,18 +1,21 @@
 """
-Solution: create the Vector Search and Atlas Search indexes on workshop.products.
+Solution: the TO-DO lab with the ??? in vector_fields filled. Same file.
 
-Attendee lab (fill the TODOs yourself):
     python scripts/TO-DO/02_create_indexes.py
 
-Why this index does not vectorize the whole document:
-  Creating a Vector Search index does not call Voyage. It builds an HNSW graph
-  on the float array already stored at ingest (description_embedding, produced
-  from embedding_text: name + tags + description).
+A Vector Search index lists only the fields Atlas may use at query time.
+It does NOT vectorize the whole document.
 
-  type "vector"  — that one array is the only ANN field.
-  type "filter"  — category and price are facts for $vectorSearch.filter,
-                   not embeddings. Omit a path = you cannot pre-filter on it.
+  - type "vector"  — ONE embedding path: the field name that stores the
+                     float array you wrote at ingest. Creating this index
+                     does not call Voyage.
+  - type "filter"  — facts for $vectorSearch.filter (the shop's department
+                     sidebar and budget). Not embeddings.
+
+Fields you omit (name, tags, …) stay on the document but are not in this index.
 """
+
+from __future__ import annotations
 
 import os
 
@@ -25,29 +28,84 @@ load_dotenv()
 client = MongoClient(os.environ["MONGODB_URI"])
 coll = client["workshop"]["products"]
 
-# Vector Search index — for $vectorSearch (semantic search)
-vector_model = SearchIndexModel(
-    definition={
-        "fields": [
-            # ANN path only. Voyage already wrote this array at ingest.
-            # Creating the index does not embed name, tags, or price.
-            {
-                "type": "vector",
-                "path": "description_embedding",
-                "numDimensions": 1024,
-                "similarity": "cosine",
-            },
-            # Not vectors. Metadata so $vectorSearch.filter can pre-filter ANN
-            # (department equality, price range). Omit = cannot filter on it.
-            {"type": "filter", "path": "category"},  # department sidebar
-            {"type": "filter", "path": "price"},  # budget range $gte / $lte
-        ]
+# Set True if vector_index already exists and you want to rebuild it.
+RECREATE = False
+# Set True after the keyword index mapping changes (e.g. adding tags).
+RECREATE_TEXT = False
+
+# ---------------------------------------------------------------------------
+# TODO 1 — Vector field
+# path           = the field you stored the embedding array on in 01
+# numDimensions  = voyage-4-large (length of that array)
+# similarity     = Voyage retrieval
+# ---------------------------------------------------------------------------
+# TODO 2 — Filter fields
+# One {"type": "filter", "path": "..."} per metadata field you will pass to
+# $vectorSearch.filter. Sidebar = department. Price = numeric $gte / $lte.
+# Do not add name or description.
+# ---------------------------------------------------------------------------
+vector_fields: list[dict] = [
+    {
+        "type": "vector",
+        "path": "description_embedding",
+        "numDimensions": 1024,
+        "similarity": "cosine",
     },
+    {"type": "filter", "path": "category"},  # TODO 2 — department sidebar
+    {"type": "filter", "path": "price"},    # TODO 2 — budget $gte / $lte
+]
+
+
+def _require_vector_definition(fields: list[dict]) -> None:
+    if any(v in ("???", 0) for f in fields for v in f.values()):
+        raise SystemExit(
+            "Fill the ??? in vector_fields (TODO 1 and TODO 2) before running."
+        )
+
+    vectors = [f for f in fields if f.get("type") == "vector"]
+    filters = [f for f in fields if f.get("type") == "filter"]
+    filter_paths = {f.get("path") for f in filters}
+
+    if not vectors:
+        raise SystemExit("TODO 1 incomplete: type must be 'vector'.")
+    vec = vectors[0]
+    if vec.get("path") != "description_embedding":
+        raise SystemExit("TODO 1: path must be 'description_embedding' (the field you stored).")
+    if vec.get("numDimensions") != 1024:
+        raise SystemExit("TODO 1: numDimensions must be 1024 for voyage-4-large.")
+    if vec.get("similarity") != "cosine":
+        raise SystemExit("TODO 1: similarity must be 'cosine'.")
+
+    if "category" not in filter_paths:
+        raise SystemExit(
+            "TODO 2 incomplete: add a filter on 'category' — the department sidebar "
+            "uses $vectorSearch.filter. Without this path, Atlas cannot pre-filter ANN."
+        )
+    if "price" not in filter_paths:
+        raise SystemExit(
+            "TODO 2 incomplete: add a filter on 'price' — numeric range filters "
+            "($lte / $gte) only work on paths declared as type 'filter'."
+        )
+    if filter_paths & {"name", "title", "description"}:
+        raise SystemExit(
+            "TODO 2: do not index name/title/description as vector filters. "
+            "Those are content (already in the embedding). Keyword search uses "
+            "the Atlas Search index below, not $vectorSearch.filter."
+        )
+
+
+_require_vector_definition(vector_fields)
+
+vector_model = SearchIndexModel(
+    definition={"fields": vector_fields},
     name="vector_index",
     type="vectorSearch",
 )
 
-# Atlas Search index — for $search (full-text search)
+# Atlas Search (keyword / fuzzy on name + tags + description) — provided.
+# Tags matter: "GPU" is on graphics cards as a tag, not always in the name.
+# This is a different index type. Filter fields on the vector index do not
+# replace it.
 search_model = SearchIndexModel(
     definition={
         "mappings": {
@@ -65,12 +123,32 @@ search_model = SearchIndexModel(
     type="search",
 )
 
-print("Creating vector search index...")
-coll.create_search_index(vector_model)
-print("Creating text search index...")
-coll.create_search_index(search_model)
-print("Index creation submitted. Poll until READY:")
+existing = {idx.get("name"): idx.get("status") for idx in coll.list_search_indexes()}
 
+if RECREATE and "vector_index" in existing:
+    print("Dropping existing vector_index so you can recreate it...")
+    coll.drop_search_index("vector_index")
+    existing.pop("vector_index", None)
+
+if "vector_index" in existing:
+    print(f"vector_index already exists ({existing['vector_index']}).")
+    print("  Set RECREATE = True at the top of this file to drop and rebuild it.")
+else:
+    print("Creating vector search index...")
+    coll.create_search_index(vector_model)
+
+if RECREATE_TEXT and "text_search_index" in existing:
+    print("Dropping existing text_search_index so you can recreate it...")
+    coll.drop_search_index("text_search_index")
+    existing.pop("text_search_index", None)
+
+if "text_search_index" not in existing:
+    print("Creating text search index...")
+    coll.create_search_index(search_model)
+else:
+    print(f"text_search_index already exists ({existing['text_search_index']}).")
+
+print("Index creation submitted. Poll until READY:")
 for idx in coll.list_search_indexes():
     print(f"  {idx.get('name')} — {idx.get('status')} ({idx.get('type')})")
 
