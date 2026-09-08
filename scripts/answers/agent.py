@@ -46,7 +46,10 @@ EMPTY_KNOWLEDGE_RETRY = (
 
 _SHOPPER_MEMORY_QUESTION = re.compile(
   r"remember that|"
+  r"i (like|prefer)\b.{0,80}\b(answer|answers|concise|short|brief|succinct)|"
   r"what do you know about me|"
+  r"what do i like|"
+  r"tell me what (do )?i like|"
   r"what have i bought|"
   r"spend the most|"
   r"categories do i spend",
@@ -57,9 +60,9 @@ _NOT_FOR_SHOPPER_MEMORY = frozenset({"search_knowledge", "get_product", "compare
 
 WRONG_MEMORY_TOOL = (
   "Wrong tool. That question is about THIS shopper, not LeafyShop policy or the catalog. "
-  "If they asked you to remember a preference, call save_memory with "
+  "If they stated a preference (I like / I prefer / remember that), call save_memory with "
   'arguments {"note": "<the preference>", "memory_scope": "long_term"}. '
-  'If they asked what you know about them, call recall_memory with arguments {}. '
+  'If they asked what you know about them or what they like, call recall_memory with arguments {}. '
   "If they asked what they spend on, call summarize_purchase_history. "
   "Do not call search_knowledge or get_product."
 )

@@ -47,10 +47,13 @@ def test_reject_ungrounded_final_on_policy_question():
 
 def test_shopper_memory_questions_are_not_rag():
   assert is_shopper_memory_question("Remember that I prefer concise answers.")
+  assert is_shopper_memory_question("I like short and concise answers")
+  assert is_shopper_memory_question("tell me what do I like?")
   assert is_shopper_memory_question("What do you know about me?")
   assert is_shopper_memory_question("What categories do I spend the most on?")
   assert not is_shopper_memory_question("What is your return policy?")
   assert not is_shopper_memory_question("How much is the 5090?")
+  assert not is_shopper_memory_question("I like the 5090")
 
 
 def test_system_prompt_lists_memory_tools_even_with_empty_lab_hole():

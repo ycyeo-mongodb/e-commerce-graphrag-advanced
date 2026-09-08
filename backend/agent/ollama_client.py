@@ -55,7 +55,7 @@ On the first turn of a customer question you MUST return a tool_call. Do not ret
   Never call search_knowledge for catalog or price questions.
 - compare two named products → compare_products
 - add to cart → add_to_cart
-Never call search_knowledge for remember / "what do you know about me" / this shopper's orders / spend by category.
+Never call search_knowledge for remember / "I like" or "I prefer" a reply style / "what do I like" / "what do you know about me" / this shopper's orders / spend by category.
 """ + _memory_instructions_block(MEMORY_TOOL_INSTRUCTIONS) + """
 
 Allowed tools:
@@ -86,7 +86,13 @@ Example — customer: "whats the most expensive graphics card in leafyshop now?"
 Example — customer: "Remember that I prefer concise answers."
 {"type": "tool_call", "tool": "save_memory", "arguments": {"note": "prefers concise answers", "memory_scope": "long_term"}}
 
+Example — customer: "I like short and concise answers"
+{"type": "tool_call", "tool": "save_memory", "arguments": {"note": "prefers short concise answers", "memory_scope": "long_term"}}
+
 Example — customer: "What do you know about me?"
+{"type": "tool_call", "tool": "recall_memory", "arguments": {}}
+
+Example — customer: "tell me what do I like?"
 {"type": "tool_call", "tool": "recall_memory", "arguments": {}}
 
 Example — customer: "What categories do I spend the most on?"

@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 # Filled memory routing — attendees write this block in the lab.
 MEMORY_TOOL_INSTRUCTIONS = """
-- remember / save a preference / "remember that I…" → save_memory
+- remember / save a preference / "remember that I…" / "I like short answers" → save_memory
   Default memory_scope is long_term. Use session only if they say this chat / this session.
-- "what do you know about me" / recall saved notes → recall_memory
+- "what do you know about me" / "what do I like" / recall saved notes → recall_memory
 - profile, sizes, interests, recently viewed → get_user_profile
 - "what have I bought" / past orders → get_purchase_history
 - "what categories do I spend the most on" / spend by category → summarize_purchase_history
@@ -58,7 +58,7 @@ On the first turn of a customer question you MUST return a tool_call. Do not ret
   Never call search_knowledge for catalog or price questions.
 - compare two named products → compare_products
 - add to cart → add_to_cart
-Never call search_knowledge for remember / "what do you know about me" / this shopper's orders / spend by category.
+Never call search_knowledge for remember / "I like" or "I prefer" a reply style / "what do I like" / "what do you know about me" / this shopper's orders / spend by category.
 """ + _memory_instructions_block(MEMORY_TOOL_INSTRUCTIONS) + """
 
 Allowed tools:
@@ -89,7 +89,13 @@ Example — customer: "whats the most expensive graphics card in leafyshop now?"
 Example — customer: "Remember that I prefer concise answers."
 {"type": "tool_call", "tool": "save_memory", "arguments": {"note": "prefers concise answers", "memory_scope": "long_term"}}
 
+Example — customer: "I like short and concise answers"
+{"type": "tool_call", "tool": "save_memory", "arguments": {"note": "prefers short concise answers", "memory_scope": "long_term"}}
+
 Example — customer: "What do you know about me?"
+{"type": "tool_call", "tool": "recall_memory", "arguments": {}}
+
+Example — customer: "tell me what do I like?"
 {"type": "tool_call", "tool": "recall_memory", "arguments": {}}
 
 Example — customer: "What categories do I spend the most on?"
