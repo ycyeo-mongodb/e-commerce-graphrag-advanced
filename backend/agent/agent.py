@@ -112,12 +112,12 @@ class SupportAgent:
 
     def invoke_ollama() -> dict[str, Any] | None:
       """Ask Ollama for the next JSON decision (tool_call or final)."""
-      # TODO 1 — invoke Ollama with the running conversation.
-      # Hint: self.ollama is an OllamaClient. decide(messages) POSTs to
-      # {OLLAMA_HOST}/api/chat and prepends SYSTEM_PROMPT. Pass `messages`
-      # (the list), not the raw shopper string.
-      # Fill: return self.ollama.decide(messages)
-      return None
+      # TODO 1 — pass the running conversation list into OllamaClient.decide.
+      # Replace ??? with `messages` (no quotes), not the raw shopper string.
+      payload = "???"
+      if payload == "???":
+        return None
+      return self.ollama.decide(payload)
 
     for step in range(1, self.settings.max_iterations + 1):
       try:
@@ -202,9 +202,15 @@ class SupportAgent:
         }
       )
       # TODO 2 — feed the tool JSON back so the next invoke_ollama() can return type=final.
-      # Hint: append a user message. Include tool_name and json.dumps(result),
-      # truncated to self.settings.max_tool_result_chars.
-      # messages.append({"role": "user", "content": f"Tool result for {tool_name}: ..."})
+      # Replace ??? with "user". The dump is already capped.
+      result_role = "???"
+      if result_role != "???":
+        messages.append(
+          {
+            "role": result_role,
+            "content": f"Tool result for {tool_name}: {json.dumps(result)[: self.settings.max_tool_result_chars]}",
+          }
+        )
       if tool_name == "search_knowledge" and not result.get("count"):
         messages.append({"role": "user", "content": EMPTY_KNOWLEDGE_RETRY})
 

@@ -1,6 +1,6 @@
-"""Solution: observe → decide → act agent loop.
+"""Solution: the agent.py lab with the ??? filled. Same file, same invoke_ollama().
 
-Drop-in for backend/agent/agent.py (attendee lab has TODOs for invoking Ollama).
+Drop-in for backend/agent/agent.py
 """
 
 from __future__ import annotations
@@ -109,9 +109,23 @@ class SupportAgent:
     messages.append({"role": "user", "content": message})
     tools_used = 0
 
+    def invoke_ollama() -> dict[str, Any] | None:
+      """Ask Ollama for the next JSON decision (tool_call or final)."""
+      # TODO 1 — pass the running conversation list into OllamaClient.decide.
+      # Replace ??? with `messages` (no quotes), not the raw shopper string.
+      payload = messages
+      if payload == "???":
+        return None
+      return self.ollama.decide(payload)
+
     for step in range(1, self.settings.max_iterations + 1):
       try:
-        decision = self.ollama.decide(messages)
+        decision = invoke_ollama()
+        if not decision:
+          return self._reply(
+            "Part 2: fill TODO 1 in backend/agent/agent.py — "
+            "return self.ollama.decide(messages)."
+          )
       except (json.JSONDecodeError, ValueError) as exc:
         logger.warning("Invalid JSON from model (attempt 1): %s", exc)
         messages.append(
@@ -124,7 +138,12 @@ class SupportAgent:
           }
         )
         try:
-          decision = self.ollama.decide(messages)
+          decision = invoke_ollama()
+          if not decision:
+            return self._reply(
+              "Part 2: fill TODO 1 in backend/agent/agent.py — "
+              "return self.ollama.decide(messages)."
+            )
         except (json.JSONDecodeError, ValueError) as retry_exc:
           self._trace(step, "error", summary=str(retry_exc))
           return self._reply("Sorry, I could not process that request. Please try rephrasing.")
@@ -181,12 +200,16 @@ class SupportAgent:
           "content": json.dumps({"type": "tool_call", "tool": tool_name, "arguments": arguments}),
         }
       )
-      messages.append(
-        {
-          "role": "user",
-          "content": f"Tool result for {tool_name}: {json.dumps(result)[: self.settings.max_tool_result_chars]}",
-        }
-      )
+      # TODO 2 — feed the tool JSON back so the next invoke_ollama() can return type=final.
+      # Replace ??? with "user". The dump is already capped.
+      result_role = "user"
+      if result_role != "???":
+        messages.append(
+          {
+            "role": result_role,
+            "content": f"Tool result for {tool_name}: {json.dumps(result)[: self.settings.max_tool_result_chars]}",
+          }
+        )
       if tool_name == "search_knowledge" and not result.get("count"):
         messages.append({"role": "user", "content": EMPTY_KNOWLEDGE_RETRY})
 

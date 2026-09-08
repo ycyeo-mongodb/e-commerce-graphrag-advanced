@@ -9,6 +9,7 @@ search_knowledge is already wired to retrieval_starter.py — fill that file in 
 from __future__ import annotations
 
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any, Callable
 
@@ -167,8 +168,23 @@ def get_user_profile(user_profiles_coll: Collection, user_id: str) -> dict[str, 
   uid = user_id.strip()
   if not uid:
     return {"found": False, "profile": None}
-  # TODO: user_profiles_coll.find_one({"user_id": uid}, projection)
-  return {"found": False, "profile": None}
+  field = "???"  # TODO — the profile key that matches demo_user (user_id)
+  if field == "???":
+    return {"found": False, "profile": None}
+  t0 = time.perf_counter()
+  doc = user_profiles_coll.find_one({field: uid}, {"_id": 0})
+  log_find(
+    "user_profiles",
+    {field: uid},
+    label=f"Load shopper profile — {uid}",
+    projection={"_id": 0},
+    latency_ms=(time.perf_counter() - t0) * 1000,
+    result_count=1 if doc else 0,
+    operation="findOne",
+  )
+  if not doc:
+    return {"found": False, "profile": None}
+  return {"found": True, "profile": doc}
 
 
 def get_purchase_history(
@@ -184,8 +200,38 @@ def get_purchase_history(
   uid = user_id.strip()
   if not uid:
     return {"orders": [], "count": 0}
-  # TODO: orders_coll.find({"user_id": uid}).sort("created_at", -1).limit(limit)
-  return {"orders": [], "count": 0}
+  field = "???"       # TODO — user_id
+  sort_field = "???"  # TODO — created_at
+  if "???" in (field, sort_field):
+    return {"orders": [], "count": 0}
+  t0 = time.perf_counter()
+  docs = list(orders_coll.find({field: uid}, {"_id": 1, "items": 1, "total": 1, "created_at": 1, "item_count": 1}).sort(sort_field, -1).limit(limit))
+  log_find(
+    "orders",
+    {field: uid},
+    label=f"Purchase history — {uid}",
+    sort=[(sort_field, -1)],
+    limit=limit,
+    latency_ms=(time.perf_counter() - t0) * 1000,
+    result_count=len(docs),
+  )
+  orders = []
+  for doc in docs:
+    created = doc.get("created_at")
+    items = [
+      {"name": item.get("name", ""), "quantity": item.get("quantity", 1), "price": item.get("price", 0)}
+      for item in (doc.get("items") or [])
+    ]
+    orders.append(
+      {
+        "order_id": str(doc.get("_id", "")),
+        "total": doc.get("total", 0),
+        "item_count": doc.get("item_count", len(items)),
+        "items": items,
+        "created_at": created.isoformat() if created and hasattr(created, "isoformat") else created,
+      }
+    )
+  return {"orders": orders, "count": len(orders)}
 
 
 def summarize_purchase_history(orders_coll: Collection, user_id: str) -> dict[str, Any]:
@@ -198,14 +244,37 @@ def summarize_purchase_history(orders_coll: Collection, user_id: str) -> dict[st
     return {"categories": [], "count": 0}
   pipeline: list[dict[str, Any]] = [
     {"$match": {"user_id": uid}},
-    # TODO: $unwind "items"
-    # TODO: $group by items.category — total_spent, item_count
-    # TODO: $sort by total_spent desc
-    # TODO: $limit 5
+    {"$unwind": "???"},  # TODO — "$items"
+    {
+      "$group": {
+        "_id": "???",  # TODO — "$items.category"
+        "total_spent": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}},
+        "item_count": {"$sum": "$items.quantity"},
+      }
+    },
+    {"$sort": {"total_spent": -1}},
+    {"$limit": 5},
   ]
-  # TODO: rows = list(orders_coll.aggregate(pipeline))
-  # TODO: log_aggregate("orders", pipeline, ...)
-  return {"categories": [], "count": 0}
+  if pipeline[1].get("$unwind") == "???" or pipeline[2]["$group"]["_id"] == "???":
+    return {"categories": [], "count": 0}
+  t0 = time.perf_counter()
+  rows = list(orders_coll.aggregate(pipeline))
+  log_aggregate(
+    "orders",
+    pipeline,
+    label=f"Purchase summary by category — {uid}",
+    latency_ms=(time.perf_counter() - t0) * 1000,
+    result_count=len(rows),
+  )
+  categories = [
+    {
+      "category": row.get("_id") or "Unknown",
+      "total_spent": row.get("total_spent") or 0,
+      "item_count": row.get("item_count") or 0,
+    }
+    for row in rows
+  ]
+  return {"categories": categories, "count": len(categories)}
 
 
 def save_memory(
@@ -225,8 +294,27 @@ def save_memory(
     return {"saved": False, "reason": "empty note"}
   if SECRET_PATTERNS.search(cleaned):
     return {"saved": False, "reason": "note appears to contain sensitive credentials"}
-  # TODO: memories_coll.insert_one({session_id, user_id, memory_scope, note, created_at})
-  return {"saved": False, "reason": "TODO: insert_one into memories"}
+  scope = memory_scope if memory_scope in {MEMORY_SCOPE_SESSION, MEMORY_SCOPE_LONG_TERM} else MEMORY_SCOPE_LONG_TERM
+  if scope == MEMORY_SCOPE_LONG_TERM and not user_id:
+    scope = MEMORY_SCOPE_SESSION
+  doc: dict[str, Any] = {
+    "session_id": session_id,
+    "memory_scope": scope,
+    "note": cleaned,
+    "created_at": datetime.now(timezone.utc),
+  }
+  if user_id:
+    doc["user_id"] = user_id
+  mongo_op = "???"  # TODO — insert_one
+  if mongo_op != "insert_one":
+    return {"saved": False, "reason": "TODO: insert_one into memories"}
+  t0 = time.perf_counter()
+  result = memories_coll.insert_one(doc)
+  log_doc = {k: v for k, v in doc.items()}
+  if isinstance(log_doc.get("created_at"), datetime):
+    log_doc["created_at"] = log_doc["created_at"].isoformat()
+  log_insert_one("memories", log_doc, label=f"Save {scope} memory", latency_ms=(time.perf_counter() - t0) * 1000)
+  return {"saved": True, "id": str(result.inserted_id), "memory_scope": scope}
 
 
 def recall_memory(
@@ -239,9 +327,57 @@ def recall_memory(
 
   Solution: scripts/answers/tools.py
   """
-  # TODO: find memory_scope=session for this session_id
-  # TODO: find memory_scope=long_term for this user_id
-  return {"session_memories": [], "long_term_memories": [], "count": 0}
+  session_scope = "???"     # TODO — session
+  long_term_scope = "???"  # TODO — long_term
+  if "???" in (session_scope, long_term_scope):
+    return {"session_memories": [], "long_term_memories": [], "count": 0}
+
+  def _notes(query: dict[str, Any], *, limit: int, label: str) -> list[dict[str, Any]]:
+    t0 = time.perf_counter()
+    raw = list(
+      memories_coll.find(query, {"_id": 0, "note": 1, "created_at": 1, "memory_scope": 1})
+      .sort("created_at", -1)
+      .limit(limit)
+    )
+    log_find(
+      "memories",
+      query,
+      label=label,
+      projection={"_id": 0, "note": 1, "created_at": 1, "memory_scope": 1},
+      sort=[("created_at", -1)],
+      limit=limit,
+      latency_ms=(time.perf_counter() - t0) * 1000,
+      result_count=len(raw),
+    )
+    notes = []
+    for row in raw:
+      created = row.get("created_at")
+      notes.append(
+        {
+          "note": row.get("note", ""),
+          "memory_scope": row.get("memory_scope"),
+          "created_at": created.isoformat() if created and hasattr(created, "isoformat") else created,
+        }
+      )
+    return notes
+
+  session_notes = _notes(
+    {"session_id": session_id, "memory_scope": session_scope},
+    limit=5,
+    label="Recall session memories",
+  )
+  long_term_notes: list[dict[str, Any]] = []
+  if user_id:
+    long_term_notes = _notes(
+      {"user_id": user_id, "memory_scope": long_term_scope},
+      limit=10,
+      label=f"Recall long-term memories — {user_id}",
+    )
+  return {
+    "session_memories": session_notes,
+    "long_term_memories": long_term_notes,
+    "count": len(session_notes) + len(long_term_notes),
+  }
 
 
 def load_conversation_history(
