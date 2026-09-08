@@ -1,6 +1,8 @@
 """
 LAB: create knowledge_vector_index on workshop.knowledge_base.
 
+Fill the ??? in vector_fields below, then from the repo root:
+
     python scripts/TO-DO/12_create_knowledge_index.py
 
 Solution: scripts/answers/12_create_knowledge_index.py
@@ -24,31 +26,39 @@ coll = client["workshop"]["knowledge_base"]
 RECREATE = False
 
 # ---------------------------------------------------------------------------
-# TODO 1 — Vector field only
-# path: the array you stored in 11_embed_knowledge_base.py
-# numDimensions: 1024 (voyage-4-large)
-# similarity: cosine
-# No type "filter" unless you will pass $vectorSearch.filter
+# TODO 1 — Vector field only (replace every ???)
+# path:           the array you stored in 11_embed_knowledge_base.py
+# numDimensions:  voyage-4-large (length of that array)
+# similarity:     Voyage retrieval
+# No type "filter" — support articles have no category/price sidebar.
 # ---------------------------------------------------------------------------
 vector_fields: list[dict] = [
-    # TODO: one dict, type vector
+    {
+        "type": "???",              # TODO 1 — "vector"
+        "path": "???",              # TODO 1 — field you $set in 11
+        "numDimensions": 0,        # TODO 1 — length of that array
+        "similarity": "???",        # TODO 1 — Voyage retrieval
+    },
 ]
 
 
 def _require(fields: list[dict]) -> None:
+    if any(v in ("???", 0) for f in fields for v in f.values()):
+        raise SystemExit("TODO 1: fill the ??? in vector_fields before running.")
+
     vectors = [f for f in fields if f.get("type") == "vector"]
     if not vectors:
-        raise SystemExit("TODO 1: add type 'vector'.")
+        raise SystemExit("TODO 1: type must be 'vector'.")
     vec = vectors[0]
     if vec.get("path") != "content_embedding":
-        raise SystemExit("TODO 1: path must be 'content_embedding'.")
+        raise SystemExit("TODO 1: path must be 'content_embedding' (the field you $set in 11).")
     if vec.get("numDimensions") != 1024:
         raise SystemExit("TODO 1: numDimensions must be 1024.")
     if vec.get("similarity") != "cosine":
         raise SystemExit("TODO 1: similarity must be 'cosine'.")
     if any(f.get("type") == "filter" for f in fields):
         raise SystemExit(
-            "v1 has no knowledge filters. Omit type 'filter' unless you will use "
+            "No knowledge filters. Omit type 'filter' unless you will use "
             "$vectorSearch.filter on that path."
         )
 
